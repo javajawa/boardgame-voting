@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+[tool.black]
+
+line-length = 94
+
+[tool.pylint."MASTER"]
+
+persistent = "yes"
+unsafe-load-any-extension = "no"
+
+jobs=4
+
+[tool.pylint."MESSAGES CONTROL"]
+
+disable="bad-continuation,not-callable,missing-function-docstring,missing-class-docstring,missing-module-docstring"

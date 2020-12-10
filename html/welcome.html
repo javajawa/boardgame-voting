@@ -1,0 +1,46 @@
+<!--
+SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+
+SPDX-License-Identifier: BSD-2-Clause
+-->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Board Game Voting</title>
+		<link rel="stylesheet" href="/style.css" />
+		<script type="module" src="/script.js" async></script>
+	</head>
+	<body>
+		<nav>
+			<a href="/{realm}/">Home</a> |
+			<a href="/{realm}/vote">Vote</a> |
+			<a href="/{realm}/results">Results</a> |
+			Logged in as <span class="js-user"></span>
+			<form id="logout-form" method="post" action="/{realm}/logout">
+				<input type="submit" value="logout" />
+			</form>
+		</nav>
+
+		<h1>Welcome!</h1>
+		<p>
+			This portal will hopefully allow us to pre-empt the eternal
+			problem of "what shall we play" by creating a short list in
+			advance.
+			You can vote on up to <span class="js-max-votes"></span> different
+			games, and veto up to <span class="js-max-vetoes"></span> other
+			games people have voted for.
+		</p>
+		<p>
+			You have used <span class="js-votes"></span> of
+			<span class="js-max-votes"></span> votes
+		</p>
+		<a class="btn" href="/{realm}/vote">Update Your Votes</a>
+		<p>
+			You have used <span class="js-vetoes"></span> of
+			<span class="js-max-vetoes"></span> vetoes.
+		</p>
+		<a class="btn" href="/{realm}/results">View Results + Veto</a>
+	</body>
+</html>

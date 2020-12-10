@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Board Game Voting Portal
+Upstream-Contact: Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+Source: https://github.com/javajawa/boardgame-voting
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...

@@ -1,0 +1,33 @@
+<!--
+SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+
+SPDX-License-Identifier: BSD-2-Clause
+-->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Board Game Voting for {realm}</title>
+		<link rel="stylesheet" href="/style.css" />
+	</head>
+	<body>
+		<h1>Login</h1>
+		<p>
+			Log-in to the board games voting portal.
+			If you do not have an account, logging in with a new username will
+			create and account with the password supplied.
+		</p>
+		<form action="/{realm}/login" method="post" enctype="multipart/form-data">
+			<label for="username">
+				User name:
+				<input id="username" type="text" name="username" />
+			</label>
+			<label for="password">
+				Password:
+				<input id="password" type="password" name="password" />
+			</label>
+			<input type="submit" value="Log In" />
+		</form>
+	</body>
+</html>

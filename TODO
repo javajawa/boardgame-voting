@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+ - Three post endpoints
+  - /blacklist
+  each takes a list of games.
+
+ - Add the added date column
+ - Add a note that clicking on columns sorts
+
+ - Home page with explanation and link to votes page and queue page
+ - Special hidden page for blacklist, only available to admin role
+
+ - Have an abstract realm and user class + user model in the handler files.

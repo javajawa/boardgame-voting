@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: Linting
+
+on:
+  push:
+    branches:
+      - mainline
+  pull_request:
+    branches:
+
+jobs:
+  py-lint:
+    name: Lint Python code
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install dependencies
+      run:  pip install -r requirements-dev.txt
+
+    - name: Run Linters
+      uses: samuelmeuli/lint-action@v1
+      with:
+        github_token: ${{ secrets.github_token }}
+
+        black:      true
+        black_dir:  src
+
+        flake8:     true
+        flake8_dir: src
+
+        mypy:       true
+        mypy_dir:   src
+        mypy_args:  --strict
+
+  es-lint:
+    name: Lint JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run ESLint
+        uses: a-b-r-o-w-n/eslint-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          files: "html/**/*"
+          extensions: ".js,.html"

@@ -1,0 +1,93 @@
+/*
+ * SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
+body
+{
+	font-size: 17.4px;
+	line-height: 1.3;
+	font-family: Helvetica, Arial, sans-serif;
+	font-weight: 100;
+	max-width: 60rem;
+	margin: 0 auto;
+	padding: 0 2em;
+	background: #333;
+	color: #ccc;
+}
+
+@media (prefers-color-scheme: light)
+{
+	body
+	{
+		background: #ddd;
+		color: black;
+	}
+}
+
+table
+{
+	border-collapse: collapse;
+	width: 100%;
+	border: 1px solid black;
+}
+
+tbody>tr:nth-child(2n):not(.voted):not(.vetoed)
+{
+	background: rgba(255, 255, 0, 0.1);
+}
+
+td, th
+{
+	padding: 0 3px;
+	margin: 0 0;
+	border: 1px solid black;
+	border-width: 1px 0;
+}
+
+td.border, th.border
+{
+	border-left-width: 1px;
+}
+
+td.number
+{
+	padding: 0 1px;
+	text-align: center;
+}
+
+td.vote
+{
+	color: transparent;
+}
+
+tr.voted
+{
+	background: rgba(0, 255, 0, 0.1);
+}
+
+tr.vetoed
+{
+	background: rgba(255, 0, 0, 0.1);
+}
+
+#logout-form
+{
+	display: inline-block;
+}
+
+nav
+{
+	float: right;
+	text-align: right;
+}
+
+a.btn
+{
+	border: 2px outset gray;
+	background: #c0c0c0;
+	font-size: 140%;
+	padding: 10px;
+	display: inline-block;
+}

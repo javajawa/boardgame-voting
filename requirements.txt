@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+beautifulsoup4~=4.8.0
+bcrypt
+gunicorn
+requests
