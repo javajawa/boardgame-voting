@@ -6,3 +6,4 @@ beautifulsoup4~=4.8.0
 bcrypt
 gunicorn
 requests
+PYYaml

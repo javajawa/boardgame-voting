@@ -9,50 +9,12 @@ from typing import Any, Dict, List
 
 import requests
 import sqlite3
+import yaml
 
 from bs4 import BeautifulSoup  # type: ignore
 
 from model import Game, Tag
 from orm.model import ModelWrapper
-
-
-TAG_CACHE: Dict[str, Tag] = {}
-
-CUSTOM_GAMES: List[Game] = [
-    Game(
-        "Other",
-        "Pictionary",
-        "Draw a thing whilst everyone else tries to guess!",
-        "",
-        3,
-        12,
-        1,
-        0,
-        3,
-        4,
-    ),
-    Game(
-        "Other",
-        "Broken Picturephone",
-        (
-            "Take another player's sentence and draw it, "
-            "or take their drawing are try to determine what it is. "
-            "Your output is passed onto the next player!"
-        ),
-        "",
-        4,
-        12,
-        1,
-        0,
-        3,
-        4,
-    ),
-    Game("Steam", "Among Us", "Among Us", "", 5, 10, 3, 3, 3, 2),
-    Game("NetGames.io", "Codewords", "", "", 4, 10, 1, 2, 3, 5),
-    Game("NetGames.io", "Secret Hitler", "", "", 5, 10, 2, 3, 3, 2),
-    Game("NetGames.io", "Spyfall", "", "", 3, 8, 2, 2, 4, 3),
-    Game("NetGames.io", "Avalon", "", "", 5, 10, 2, 2, 4, 3),
-]
 
 
 def get_tag(model: ModelWrapper[Tag], name: str) -> Tag:
@@ -129,10 +91,14 @@ if __name__ == "__main__":
 
         game_model = Game.model(cursor)
 
-        for game in CUSTOM_GAMES:
-            if game_model.search(platform=game.platform, name=game.name):
-                continue
+        with open("games/games.yaml", "r") as yaml_stream:
+            for game_data in yaml.load_all(yaml_stream, Loader=yaml.SafeLoader):
+                game = Game(**game_data)
 
-            game_model.store(game)
+                if game_model.search(platform=game.platform, name=game.name):
+                    continue
+
+                print(f"New Game: {game.name} ({game.platform})")
+                game_model.store(game)
 
         update_bga(game_model, Tag.model(cursor))

@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+platform: Other
+name: Pictionary
+description: Draw a thing whilst everyone else tries to guess!
+image: ""
+min_players: 3
+max_players: 12
+complexity: 1
+strategy: 0
+luck: 3
+interaction: 4
+
+---
+
+platform: Other
+name: Broken Picture-Phone
+description: >-
+  Take another player's sentence and draw it,
+  or take their drawing are try to determine what it is.
+  Your output is passed onto the next player!
+image: ""
+min_players: 3
+max_players: 12
+complexity: 1
+strategy: 0
+luck: 3
+interaction: 4
+
+---
+
+platform: Steam
+name: Among Us
+description: ""
+image: ""
+min_players: 5
+max_players: 10
+complexity: 3
+strategy: 3
+luck: 3
+interaction: 3
+
+---
+
+platform: NetGames.io
+name: Codewords
+description: ""
+image: ""
+min_players: 5
+max_players: 10
+complexity: 3
+strategy: 3
+luck: 3
+interaction: 3
+
+---
+
+platform: NetGames.io
+name: Secret Hilter
+description: ""
+image: ""
+min_players: 5
+max_players: 10
+complexity: 2
+strategy: 3
+luck: 3
+interaction: 2
+
+---
+
+platform: NetGames.io
+name: Spyfall
+description: ""
+image: ""
+min_players: 3
+max_players: 8
+complexity: 2
+strategy: 2
+luck: 4
+interaction: 3
+
+---
+
+platform: NetGames.io
+name: Avalon
+description: ""
+image: ""
+min_players: 5
+max_players: 10
+complexity: 2
+strategy: 2
+luck: 4
+interaction: 3
