@@ -19,7 +19,7 @@ import os
 
 from wsgiref.handlers import format_date_time
 
-from model import Realm
+from boardgames.model import Realm
 
 
 WSGIEnv = Dict[str, str]

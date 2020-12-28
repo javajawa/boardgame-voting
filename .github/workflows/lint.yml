@@ -8,6 +8,8 @@ on:
   push:
     branches:
       - mainline
+      - preview
+      - future
   pull_request:
     branches:
 
@@ -34,13 +36,13 @@ jobs:
         github_token: ${{ secrets.github_token }}
 
         black:      true
-        black_dir:  src
+        black_dir:  boardgames
 
         flake8:     true
-        flake8_dir: src
+        flake8_dir: boardgames
 
         mypy:       true
-        mypy_dir:   src
+        mypy_dir:   boardgames
         mypy_args:  --strict
 
   es-lint:

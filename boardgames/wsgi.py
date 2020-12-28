@@ -15,9 +15,9 @@ import dataclasses
 import json
 import sqlite3
 
-from handler import FileData, Response, WSGIEnv
-from auth_handler import AuthHandler
-from model import Game, Realm, User, Vote, Veto
+from boardgames.handler import FileData, Response, WSGIEnv
+from boardgames.auth_handler import AuthHandler
+from boardgames.model import Game, Realm, User, Vote, Veto
 
 
 FILES: Dict[str, Tuple[str, str]] = {

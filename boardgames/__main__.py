@@ -13,7 +13,7 @@ from typing import Any, Dict
 
 import gunicorn.app.base  # type: ignore
 
-import wsgi
+from boardgames.wsgi import BGHandler
 
 
 class StandAlone(gunicorn.app.base.Application):  # type: ignore

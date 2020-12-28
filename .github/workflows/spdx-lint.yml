@@ -8,6 +8,8 @@ on:
   push:
     branches:
       - mainline
+      - future
+      - preview
   pull_request:
 
 jobs:

@@ -13,7 +13,7 @@ from typing import Dict
 
 import sqlite3
 
-from model import GameTags, Realm, RealmBlacklist, Veto, Vote
+from boardgames.model import GameTags, Realm, RealmBlacklist, Veto, Vote
 
 
 REALMS: Dict[int, str] = {

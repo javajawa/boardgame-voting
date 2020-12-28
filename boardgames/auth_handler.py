@@ -18,8 +18,8 @@ import sqlite3
 
 from http.cookies import SimpleCookie, Morsel
 
-from handler import Handler, Response, WSGIEnv
-from model import Realm, User
+from boardgames.handler import Handler, Response, WSGIEnv
+from boardgames.model import Realm, User
 
 
 PostData = Dict[str, List[Union[str, bytes]]]
