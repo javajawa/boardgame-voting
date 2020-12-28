@@ -36,13 +36,13 @@ jobs:
         github_token: ${{ secrets.github_token }}
 
         black:      true
-        black_dir:  boardgames
+        black_dir:  boardgames orm
 
         flake8:     true
-        flake8_dir: boardgames
+        flake8_dir: boardgames orm
 
         mypy:       true
-        mypy_dir:   boardgames
+        mypy_dir:   boardgames orm
         mypy_args:  --strict
 
   es-lint:

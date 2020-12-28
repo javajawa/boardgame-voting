@@ -15,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup  # type: ignore
 
 from boardgames.model import Game
-from boardgames.orm.model import ModelWrapper
+from orm.model import ModelWrapper
 
 
 def update_bga(model: ModelWrapper[Game]) -> None:

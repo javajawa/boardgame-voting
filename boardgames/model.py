@@ -12,7 +12,7 @@ from typing import Optional
 from dataclasses import dataclass, field
 import datetime
 
-from boardgames import orm
+import orm
 
 
 @orm.data_model(["realm"])
