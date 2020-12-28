@@ -168,7 +168,7 @@ class BGHandler(AuthHandler):
             (realm.realm_id,),
         )
 
-        votes: Dict[int, int] = {k: v for k, v in self.cursor.fetchall()}
+        votes: Dict[int, int] = dict(self.cursor.fetchall())
 
         self.cursor.execute(
             """
@@ -181,7 +181,7 @@ class BGHandler(AuthHandler):
             (realm.realm_id,),
         )
 
-        vetos: Dict[int, int] = {k: v for k, v in self.cursor.fetchall()}
+        vetos: Dict[int, int] = dict(self.cursor.fetchall())
 
         game_ids = set(votes.keys()).union(vetos.keys())
 
