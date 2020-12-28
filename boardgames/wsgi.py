@@ -75,10 +75,11 @@ class BGHandler(AuthHandler):
             return self.auth_challenge(realm)
 
         if verb == "GET":
-            return self.get_request(environ, realm, user, path)
-        elif verb == "PUT":
+            return self.get_request(environ, user, path)
+
+        if verb == "PUT":
             data: IO[bytes] = environ.get("wsgi.input")  # type: ignore
-            return self.put_request(realm, user, path, data)
+            return self.put_request(user, path, data)
 
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
@@ -94,23 +95,22 @@ class BGHandler(AuthHandler):
 
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
-    def get_request(self, environ: WSGIEnv, realm: Realm, user: User, path: str) -> Response:
+    def get_request(self, environ: WSGIEnv, user: User, path: str) -> Response:
         if path in self.rfiles:
-            return self.realm_file(environ, realm, self.rfiles[path])
+            return self.realm_file(environ, user.realm, self.rfiles[path])
 
-        elif path == "games.json":
-            return self.send_games_list(realm)
+        if path == "games.json":
+            return self.send_games_list(user.realm)
 
-        elif path == "results.json":
-            return self.send_results(realm)
+        if path == "results.json":
+            return self.send_results(user.realm)
 
-        elif path == "me":
+        if path == "me":
             return self.send_user_details(user)
 
-        else:
-            return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
+        return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
-    def put_request(self, realm: Realm, user: User, path: str, data: IO[bytes]) -> Response:
+    def put_request(self, user: User, path: str, data: IO[bytes]) -> Response:
         if path not in ["vote", "veto"]:
             return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
