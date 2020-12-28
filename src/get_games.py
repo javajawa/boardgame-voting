@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 import sqlite3
@@ -15,23 +15,6 @@ from bs4 import BeautifulSoup  # type: ignore
 
 from model import Game, Tag
 from orm.model import ModelWrapper
-
-
-def get_tag(model: ModelWrapper[Tag], name: str) -> Tag:
-    if name in TAG_CACHE:
-        return TAG_CACHE[name]
-
-    candidates = model.search(tag=name)
-
-    if not candidates:
-        tag = Tag(name)
-        model.store(tag)
-    else:
-        tag = candidates[0]
-
-    TAG_CACHE[name] = tag
-
-    return tag
 
 
 def update_bga(model: ModelWrapper[Game], tags: ModelWrapper[Tag]) -> None:
