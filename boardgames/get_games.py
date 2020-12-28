@@ -7,9 +7,10 @@
 
 from typing import Any
 
-import requests
 import sqlite3
 import yaml
+
+import requests
 
 from bs4 import BeautifulSoup  # type: ignore
 

@@ -12,11 +12,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Union
 
 import abc
-import bcrypt
 import cgi
 import sqlite3
 
 from http.cookies import SimpleCookie, Morsel
+
+import bcrypt
 
 from boardgames.handler import Handler, Response, WSGIEnv
 from boardgames.model import Realm, User
@@ -94,7 +95,8 @@ class AuthHandler(Handler):
             ],
         )
 
-    def logout(self, realm: Realm) -> Response:
+    @staticmethod
+    def logout(realm: Realm) -> Response:
         expires = "; expires=Thu, 01 Jan 1970 00:00:00 GMT"
 
         return Response(

@@ -59,6 +59,7 @@ class Response:
         return self.contents
 
 
+@dataclasses.dataclass(init=False)
 class FileData:
     mime_type: str
     modified: float

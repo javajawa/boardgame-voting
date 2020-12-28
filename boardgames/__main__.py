@@ -33,14 +33,17 @@ class StandAlone(gunicorn.app.base.Application):  # type: ignore
         for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
-    def load(self) -> wsgi.BGHandler:
-        return wsgi.BGHandler()
+    def init(self, parser: Any, opts: Any, args: Any) -> None:
+        pass
+
+    def load(self) -> BGHandler:
+        return BGHandler()
 
 
 if __name__ == "__main__":
-    options = {
+    _options = {
         "bind": "%s:%s" % ("127.0.0.1", "8888"),
         "workers": 1,
     }
 
-    StandAlone(options).run()
+    StandAlone(_options).run()

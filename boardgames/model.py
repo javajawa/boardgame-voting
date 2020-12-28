@@ -60,24 +60,28 @@ class Tag(orm.Modelled["Tag"]):
 
 
 @orm.join_model
+@dataclass
 class GameTags(orm.Joiner[Game, Tag]):
     game: Game
     tag: Tag
 
 
 @orm.join_model
+@dataclass
 class RealmBlacklist(orm.Joiner[Realm, Game]):
     realm: Realm
     game: Game
 
 
 @orm.join_model
+@dataclass
 class Vote(orm.Joiner[User, Game]):
     user: User
     game: Game
 
 
 @orm.join_model
+@dataclass
 class Veto(orm.Joiner[User, Game]):
     user: User
     game: Game
