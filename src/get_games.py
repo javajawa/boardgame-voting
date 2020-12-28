@@ -17,7 +17,7 @@ from model import Game, Tag
 from orm.model import ModelWrapper
 
 
-def update_bga(model: ModelWrapper[Game], tags: ModelWrapper[Tag]) -> None:
+def update_bga(model: ModelWrapper[Game]) -> None:
     existing = [game.name for game in model.search(platform="BGA")]
 
     html = requests.get("https://boardgamearena.com/gamelist")
@@ -68,7 +68,7 @@ def fill_game_data(game: Game, data: Any) -> Game:
     return game
 
 
-if __name__ == "__main__":
+def main() -> None:
     with sqlite3.connect("games.db") as conn:
         cursor = conn.cursor()
 
@@ -84,4 +84,8 @@ if __name__ == "__main__":
                 print(f"New Game: {game.name} ({game.platform})")
                 game_model.store(game)
 
-        update_bga(game_model, Tag.model(cursor))
+        update_bga(game_model)
+
+
+if __name__ == "__main__":
+    main()
