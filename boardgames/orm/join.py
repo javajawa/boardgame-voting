@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import (
     get_type_hints,
     Any,
+    Dict,
     Generic,
     List,
     Type,
@@ -20,9 +21,7 @@ import inspect
 import logging
 import sqlite3
 
-from typing_extensions import Protocol
-
-from .model import Model
+from .model import Model, _MODELS as registered
 
 
 Table = TypeVar("Table")
@@ -32,49 +31,41 @@ NoneType: Type[None] = type(None)
 
 _LOGGER = logging.getLogger("tiny-orm")
 
+_MODELS: Dict[Type[Joiner[Left, Right]], JoinModel[Left, Right]] = {}  # type: ignore
 
-class Joiner(Protocol[Left, Right]):
-    __model__: JoinModel[Left, Right] = ...  # type: ignore
 
-    def __init__(self, **kwargs: Any):
-        ...
+class Joiner(Generic[Left, Right]):
+    @classmethod
+    def model(
+        cls: Type[Joiner[Left, Right]], cursor: sqlite3.Cursor
+    ) -> JoinWrapper[Left, Right]:
+        return JoinWrapper(_MODELS[cls], cursor)
 
     @classmethod
-    def model(cls: Type[Table], cursor: sqlite3.Cursor) -> JoinWrapper[Left, Right]:
-        ...
+    def create_table(cls: Type[Joiner[Left, Right]], cursor: sqlite3.Cursor) -> None:
+        _MODELS[cls].create_table(cursor)
 
 
 def join_model(data_class: Type[Joiner[Left, Right]]) -> Type[Joiner[Left, Right]]:
     if not inspect.isclass(data_class):
         raise Exception("Can not make model data from non-class")
 
-    def make_model(
-        cls: Type[Joiner[Left, Right]], cursor: sqlite3.Cursor
-    ) -> JoinWrapper[Left, Right]:
-        cls.__model__.create_table(cursor)
-
-        return JoinWrapper(cls.__model__, cursor)
-
     types = get_type_hints(data_class)
-
-    if "__model__" in types:
-        del types["__model__"]
 
     if len(types) != 2:
         raise Exception("Can only build a join table with two fields")
 
     left, right = types.values()
 
-    if not hasattr(left, "__model__") or not isinstance(left.__model__, Model):
+    if left not in registered:
         raise Exception(f"No model for {left.__name__}")
 
-    if not hasattr(right, "__model__") or not isinstance(right.__model__, Model):
+    if right not in registered:
         raise Exception(f"No model for {right.__name__}")
 
     table = data_class.__name__
 
-    setattr(data_class, "__model__", JoinModel(table, left.__model__, right.__model__))
-    setattr(data_class, "model", classmethod(make_model))
+    _MODELS[data_class] = JoinModel(table, registered[left], registered[right])
 
     return data_class
 

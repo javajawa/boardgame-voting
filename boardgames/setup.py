@@ -14,6 +14,7 @@ from typing import Dict
 import sqlite3
 
 from boardgames.model import GameTags, Realm, RealmBlacklist, Veto, Vote
+import boardgames.get_games
 
 
 REALMS: Dict[int, str] = {
@@ -28,15 +29,18 @@ def main() -> None:
     with sqlite3.connect("games.db") as conn:
         cursor = conn.cursor()
 
+        Realm.create_table(cursor)
         model = Realm.model(cursor)
 
         for _id, realm in REALMS.items():
             model.store(Realm(_id, realm))
 
-        Veto.model(cursor)
-        Vote.model(cursor)
-        GameTags.model(cursor)
-        RealmBlacklist.model(cursor)
+        Veto.create_table(cursor)
+        Vote.create_table(cursor)
+        GameTags.create_table(cursor)
+        RealmBlacklist.create_table(cursor)
+
+        boardgames.get_games.main()
 
         cursor.execute(
             """

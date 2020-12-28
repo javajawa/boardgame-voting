@@ -30,8 +30,6 @@ import re
 import sqlite3
 import typing_inspect  # type: ignore
 
-from typing_extensions import Protocol
-
 
 Table = TypeVar("Table")
 NoneType: Type[None] = type(None)
@@ -46,6 +44,8 @@ _TYPE_MAP = {
     bool: "SMALLINT",
     datetime.datetime: "INTEGER",
 }
+
+_MODELS: Dict[Type[Modelled[Table]], Model[Table]] = {}  # type: ignore
 
 
 def decompose_type(_type: Type[Any]) -> Tuple[Type[Any], bool]:
@@ -68,26 +68,17 @@ def is_valid_type(_type: Type[Any]) -> bool:
     if not inspect.isclass(_type):
         return False
 
-    if not hasattr(_type, "__model__"):
-        return False
-
-    return isinstance(_type.__model__, Model)
+    return _type in _MODELS
 
 
-class Modelled(Protocol[Table]):
-    __model__: Model[Table] = ...  # type: ignore
+class Modelled(Generic[Table]):
+    @classmethod
+    def model(cls: Type[Modelled[Table]], cursor: sqlite3.Cursor) -> ModelWrapper[Table]:
+        return ModelWrapper(_MODELS[cls], cursor)
 
     @classmethod
-    def model(cls: Type[Table], cursor: sqlite3.Cursor) -> ModelWrapper[Table]:
-        ...
-
-
-def _make_proxy_model(
-    cls: Type[Modelled[Table]], cursor: sqlite3.Cursor
-) -> ModelWrapper[Table]:
-    cls.__model__.create_table(cursor)
-
-    return ModelWrapper(cls.__model__, cursor)
+    def create_table(cls: Type[Modelled[Table]], cursor: sqlite3.Cursor) -> None:
+        _MODELS[cls].create_table(cursor)
 
 
 def _add_uniques(model: Model[Table], *uniques: List[str]) -> None:
@@ -100,22 +91,24 @@ def _add_uniques(model: Model[Table], *uniques: List[str]) -> None:
         model.uniques.append(_fields)
 
 
-def data_model(*uniques: List[str]) -> Callable[[Type[Table]], Type[Modelled[Table]]]:
-    def make_model(data_class: Type[Table]) -> Type[Modelled[Table]]:
+def data_model(
+    *uniques: List[str],
+) -> Callable[[Type[Modelled[Table]]], Type[Modelled[Table]]]:
+    def make_model(data_class: Type[Modelled[Table]]) -> Type[Modelled[Table]]:
         if not inspect.isclass(data_class):
             raise Exception("Can not make model data from non-class")
 
         table = data_class.__name__
         id_field = re.sub(r"(?<!^)(?=[A-Z])", "_", table).lower() + "_id"
 
-        model: Model[Table] = Model(data_class, table, id_field)
+        model = Model(data_class, table, id_field)
         types = get_type_hints(data_class)
 
         if id_field not in types:
             raise Exception(f"ID field `{id_field}` missing in `{table}`")
 
         for _field, _type in types.items():
-            if _field in [id_field, "__model__"]:
+            if _field in [id_field]:
                 continue
 
             _type, required = decompose_type(_type)
@@ -124,7 +117,7 @@ def data_model(*uniques: List[str]) -> Callable[[Type[Table]], Type[Modelled[Tab
                 raise Exception(f"Field `{_field}` in `{table}` is not a valid type")
 
             if _type not in _TYPE_MAP:
-                sub_model = _type.__model__
+                sub_model = _MODELS[_type]
 
                 model.foreigners[sub_model.id_field] = (_field, sub_model)
 
@@ -136,10 +129,9 @@ def data_model(*uniques: List[str]) -> Callable[[Type[Table]], Type[Modelled[Tab
 
         _add_uniques(model, *uniques)
 
-        setattr(data_class, "__model__", model)
-        setattr(data_class, "model", classmethod(_make_proxy_model))
+        _MODELS[data_class] = model
 
-        return data_class  # type: ignore
+        return data_class
 
     return make_model
 
@@ -217,7 +209,8 @@ class Model(Generic[Table]):
         del rows
 
         for fkey, (okey, model) in self.foreigners.items():
-            frens = model.get_many(cursor, *set(map(lambda row: row[fkey], packed)))
+            fids: Set[int] = {row[fkey] for row in packed}
+            frens = model.get_many(cursor, *fids)
 
             for row in packed:
                 row[okey] = frens[row[fkey]]
