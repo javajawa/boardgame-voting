@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2020 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+platform: Steam
+name: Among Us
+link: "https://store.steampowered.com/app/945360/Among_Us/"
+description: ""
+image: ""
+min_players: 5
+max_players: 10
+complexity: 3
+strategy: 2
+luck: 3
+interaction: 4
+
+---
+
+platform: Steam
+name: Root
+link: "https://store.steampowered.com/app/965580/Root/"
+description: "Gain command of the woods as the old guard owls, the industrialist cats, or the upstart rebels"
+image: ""
+min_players: 2
+max_players: 4
+complexity: 4
+strategy: 4
+luck: 2
+interaction: 5
+
+---
+
+platform: Steam
+name: Terraforming Mars
+link: "https://store.steampowered.com/app/800270/Terraforming_Mars/"
+description: "Play out the multi-generational effort to terraform Mars. Attempt to do the most before the shared terraforming track is complete!"
+image: ""
+min_players: 1
+max_players: 5
+complexity: 4
+strategy: 5
+luck: 2
+interaction: 3
+
+---
+
+platform: Steam
+name: Ticket to Ride
+link: "https://store.steampowered.com/app/108200/Ticket_to_Ride/"
+description: "Choo Choo Train, Froot Froot!"
+image: ""
+min_players: 2
+max_players: 5
+complexity: 3
+strategy: 3
+luck: 3
+interaction: 2
+
+---
+
+platform: Steam
+name: Space Food Truck
+link: "https://store.steampowered.com/app/397390/Space_Food_Truck/"
+description: "Space Food Truck is a cooperative, culinary scifi adventure. 1-4 players take on unique roles aboard the Galaxy Gourmet."
+image: ""
+min_players: 1
+max_players: 4
+complexity: 2
+strategy: 2
+luck: 4
+interaction: 3

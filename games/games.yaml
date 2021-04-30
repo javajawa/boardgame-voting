@@ -33,19 +33,6 @@ interaction: 4
 
 ---
 
-platform: Steam
-name: Among Us
-description: ""
-image: ""
-min_players: 5
-max_players: 10
-complexity: 3
-strategy: 3
-luck: 3
-interaction: 3
-
----
-
 platform: NetGames.io
 name: Codewords
 link: https://netgames.io/games/codewords/
