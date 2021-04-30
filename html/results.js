@@ -47,6 +47,9 @@ function game_to_tr(game)
         {"game-id": game.game_id},
         td(game.platform, {"class": "border"}),
         td(make_details(game.name, game.description), {"class": "border"}),
+        number_to_td(game.min_players, "players", "border"),
+        td("-"),
+        number_to_td(game.max_players, "players", ""),
         number_to_td(game.votes, "border votes", ""),
         number_to_td(game.vetos, "votes", ""),
         ...vote
@@ -56,15 +59,16 @@ function game_to_tr(game)
 function table_headers()
 {
     const headings = {
-        "Platform": "border",
-        "Name": "border",
-        "∑": "border numeric",
-        "⚔️": "numeric",
-        "Veto": "border",
+        "Platform": {"class": "border"},
+        "Name": {"class": "border"},
+        "Players": {"class": "border numeric", "colspan": "3"},
+        "∑": {"class": "border numeric", "title": "Total Votes"},
+        "⚔️": {"class": "numeric", "title": "Total Vetoes"},
+        "Veto": {"class": "border button"},
     };
 
     return tr(
-        Object.entries(headings).map(h => th(h[0], {"class": h[1]}))
+        Object.entries(headings).map((h) => th(...h))
     );
 }
 
