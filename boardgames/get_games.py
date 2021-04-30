@@ -7,6 +7,7 @@
 
 from typing import Any
 
+import os
 import sqlite3
 import yaml
 
@@ -77,17 +78,25 @@ def main() -> None:
 
         game_model = Game.model(cursor)
 
-        with open("games/games.yaml", "r") as yaml_stream:
-            for game_data in yaml.load_all(yaml_stream, Loader=yaml.SafeLoader):
-                game = Game(**game_data)
+        for path in os.listdir("games"):
+            if not path.endswith(".yaml"):
+                continue
 
-                if game_model.search(platform=game.platform, name=game.name):
-                    continue
+            print("Importing data from ./games/" + path)
+            with open("games/" + path, "r") as yaml_stream:
+                for game_data in yaml.load_all(yaml_stream, Loader=yaml.SafeLoader):
+                    game = Game(**game_data)
 
-                print(f"New Game: {game.name} ({game.platform})")
-                game_model.store(game)
+                    if game_model.search(platform=game.platform, name=game.name):
+                        continue
 
+                    print(f"New Game: {game.name} ({game.platform})")
+                    game_model.store(game)
+
+        print("Importing data from BGA")
         update_bga(game_model)
+
+        conn.commit()
 
 
 if __name__ == "__main__":
