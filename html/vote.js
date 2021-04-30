@@ -37,9 +37,9 @@ function game_to_tr(game)
     let vote;
 
     if (game.voted) {
-        vote = [td("0", {"class": "border vote", "click": toggleVote}), {"class": "voted"}];
+        vote = [td("0", {"class": "border vote", "click": toggleVote}, "vote"), {"class": "voted"}];
     } else {
-        vote = [td("1", {"class": "border vote", "click": toggleVote})];
+        vote = [td("1", {"class": "border vote", "click": toggleVote}, "vote")];
     }
 
     return tr(
@@ -81,7 +81,7 @@ function table_headers()
         "♜": {"class": "numeric", "title": "Strategy / Planning"},
         "⚅": {"class": "numeric", "title": "Luck"},
         "⚔️": {"class": "numeric", "title": "Interaction Between Players"},
-        "Vote": {"class": "border default_sort"},
+        "Vote": {"class": "border default_sort button"},
     };
 
     return tr(

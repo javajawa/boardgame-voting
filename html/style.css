@@ -57,11 +57,6 @@ td.number
 	text-align: center;
 }
 
-td.vote
-{
-	color: transparent;
-}
-
 tr.voted
 {
 	background: rgba(0, 255, 0, 0.1);
@@ -70,6 +65,24 @@ tr.voted
 tr.vetoed
 {
 	background: rgba(255, 0, 0, 0.1);
+}
+
+td.vote, td.veto
+{
+	font-size: 0;
+}
+
+td.vote::after {
+	content: "✅";
+	font-size: 12pt;
+}
+
+tr.voted>td.vote::after {
+	content: "×";
+}
+
+tr:not(.vetoed)>td.veto::after {
+	content: "×";
 }
 
 #logout-form

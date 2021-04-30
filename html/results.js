@@ -38,9 +38,9 @@ function game_to_tr(game)
     if (game.voted) {
         vote = [td({"class": "border"}), {"class": "voted"}];
     } else if (game.vetoed) {
-        vote = [td({"class": "border vote", "click": toggleVeto}), {"class": "vetoed"}];
+        vote = [td({"class": "border veto", "click": toggleVeto}), {"class": "vetoed"}];
     } else {
-        vote = [td({"class": "border vote", "click": toggleVeto})];
+        vote = [td({"class": "border veto", "click": toggleVeto})];
     }
 
     return tr(
