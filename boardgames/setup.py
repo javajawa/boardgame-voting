@@ -49,6 +49,7 @@ def main() -> None:
             WHERE max_players <= 2
             """
         )
+
         cursor.execute(
             """
             INSERT OR IGNORE INTO RealmBlacklist

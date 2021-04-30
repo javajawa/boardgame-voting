@@ -36,8 +36,6 @@ REALM_FILES: Dict[str, str] = {
 
 
 class BGHandler(AuthHandler):
-    connection: sqlite3.Connection
-
     realms: Dict[str, Realm] = {}
     files: Dict[str, FileData] = {}
     rfiles: Dict[str, FileData] = {}
@@ -123,6 +121,8 @@ class BGHandler(AuthHandler):
 
         for game in game_model.get_many(*ids).values():
             vote_model.store(user, game)
+
+        self.connection.commit()
 
         return Response(204, "", b"")
 

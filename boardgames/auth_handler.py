@@ -27,6 +27,7 @@ PostData = Dict[str, List[Union[str, bytes]]]
 
 
 class AuthHandler(Handler):
+    connection: sqlite3.Connection
     cursor: sqlite3.Cursor
 
     def auth(self, realm: Realm, cookie: str) -> Optional[User]:
@@ -75,6 +76,7 @@ class AuthHandler(Handler):
 
             user = User(realm=realm, username=username, password=_pass, role="none")
             user_model.store(user)
+            self.connection.commit()
 
         else:
             user = candidates[0]
