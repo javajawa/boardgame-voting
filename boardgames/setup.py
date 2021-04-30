@@ -22,6 +22,8 @@ REALMS: Dict[int, str] = {
     2: "brew-crew",
     3: "cursed-chat",
     4: "frens",
+    5: "icsf",
+    6: "imperial",
 }
 
 
