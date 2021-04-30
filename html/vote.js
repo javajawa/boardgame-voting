@@ -15,6 +15,8 @@ const tr = elemGenerator("tr");
 const th = elemGenerator("th");
 const td = elemGenerator("td");
 
+const a = elemGenerator("a");
+
 const summary = elemGenerator("summary");
 const details = elemGenerator("details");
 const input = elemGenerator("input");
@@ -44,7 +46,7 @@ function game_to_tr(game)
 
     return tr(
         {"game-id": game.game_id},
-        td(game.platform, {"class": "border"}),
+        td(a({"href": game.link || "", target: "_blank"}, game.platform), {"class": "border"}),
         td(make_details(game.name, game.description), {"class": "border"}),
         number_to_td(game.min_players, "players", "border"),
         td("-"),

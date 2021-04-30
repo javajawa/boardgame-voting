@@ -46,6 +46,8 @@ def fill_game_data(game: Game, data: Any) -> Game:
     game_html = requests.get("https://boardgamearena.com" + data.find("a")["href"])
     game_data = BeautifulSoup(game_html.content, "html.parser")
 
+    game.link = "https://boardgamearena.com" + game_data.find(id="create_new_table")["href"]
+
     desc = game_data.find(id="game_description_text")
     if desc:
         game.description = desc.text.strip()

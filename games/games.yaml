@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-platform: Other
+platform: Webpage
 name: Pictionary
+link: https://sketchful.io/
 description: Draw a thing whilst everyone else tries to guess!
 image: ""
 min_players: 3
@@ -15,8 +16,9 @@ interaction: 4
 
 ---
 
-platform: Other
+platform: Webpage
 name: Broken Picture-Phone
+link: https://www.brokenpicturephone.com/
 description: >-
   Take another player's sentence and draw it,
   or take their drawing are try to determine what it is.
@@ -46,6 +48,7 @@ interaction: 3
 
 platform: NetGames.io
 name: Codewords
+link: https://netgames.io/games/codewords/
 description: ""
 image: ""
 min_players: 5
@@ -59,6 +62,7 @@ interaction: 3
 
 platform: NetGames.io
 name: Secret Hilter
+link: https://netgames.io/games/secret-hitler/
 description: ""
 image: ""
 min_players: 5
@@ -72,6 +76,7 @@ interaction: 2
 
 platform: NetGames.io
 name: Spyfall
+link: https://netgames.io/games/spyfall/
 description: ""
 image: ""
 min_players: 3
@@ -85,6 +90,7 @@ interaction: 3
 
 platform: NetGames.io
 name: Avalon
+link: https://netgames.io/games/avalon/
 description: ""
 image: ""
 min_players: 5

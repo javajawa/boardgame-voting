@@ -38,6 +38,7 @@ class Game(orm.Modelled["Game"]):
     platform: str
     name: str
     description: str = ""
+    link: str = ""
     image: str = ""
     min_players: int = 0
     max_players: int = 0
