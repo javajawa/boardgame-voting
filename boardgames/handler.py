@@ -127,3 +127,13 @@ class Handler(abc.ABC):
             "application/json",
             [x.encode("utf-8") for x in json.JSONEncoder().iterencode(data)],
         )
+
+    @staticmethod
+    def send_jsonp(data: Any, callback: str) -> Response:
+        return Response(
+            200,
+            "text/javascript",
+            [callback.encode("utf-8"), b"("]
+            + [x.encode("utf-8") for x in json.JSONEncoder().iterencode(data)]
+            + [b");"],
+        )

@@ -21,6 +21,7 @@ from boardgames.model import Game, Realm, User, Vote, Veto
 
 
 FILES: Dict[str, Tuple[str, str]] = {
+    "/boardgames.js": ("html/boardgames.js", "application/javascript"),
     "/script.js": ("html/script.js", "application/javascript"),
     "/vote.js": ("html/vote.js", "application/javascript"),
     "/results.js": ("html/results.js", "application/javascript"),
@@ -56,6 +57,9 @@ class BGHandler(AuthHandler):
     def call(self, verb: str, path: str, environ: WSGIEnv) -> Response:
         if verb == "GET" and path in self.files:
             return self.page_file(environ, self.files[path])
+
+        if path == "/games.json":
+            return self.send_all_games()
 
         realm_name, path = self.normalise_path(path)
 
@@ -125,6 +129,15 @@ class BGHandler(AuthHandler):
         self.connection.commit()
 
         return Response(204, "", b"")
+
+    def send_all_games(self) -> Response:
+        self.cursor.execute("SELECT [Game].[game_id] FROM [Game]")
+
+        ids = [x[0] for x in self.cursor.fetchall()]
+        games = Game.model(self.cursor).get_many(*ids)
+        data = [dataclasses.asdict(game) for game in games.values()]
+
+        return self.send_jsonp(data, "gameDetails")
 
     def send_games_list(self, realm: Realm) -> Response:
         self.cursor.execute(
