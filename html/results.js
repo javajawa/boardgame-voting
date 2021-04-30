@@ -16,6 +16,7 @@ const th = elemGenerator("th");
 const td = elemGenerator("td");
 
 const a = elemGenerator("a");
+const input = elemGenerator("input");
 
 const summary = elemGenerator("summary");
 const details = elemGenerator("details");
@@ -58,12 +59,28 @@ function game_to_tr(game)
     );
 }
 
+function filter_player_count(e)
+{
+    const players = parseInt(e.target.value || 0);
+
+    [...document.querySelectorAll("tbody>tr")].forEach(row => {
+        if (players == 0) {
+            row.style.display = '';
+            return;
+        }
+
+        const [min, max] = [...row.querySelectorAll("td.players")].map(e => parseInt(e.textContent));
+        row.style.display = (min <= players && players <= max) ? "" : "none";
+    });
+}
+
 function table_headers()
 {
     const headings = {
         "Platform": {"class": "border"},
         "Name": {"class": "border"},
-        "Players": {"class": "border numeric", "colspan": "3"},
+        "Players": {"class": "border numeric", "colspan": "2"},
+        "": input({"type": "number", "min": "1", "max": "12", "change": filter_player_count}),
         "∑": {"class": "border numeric", "title": "Total Votes"},
         "⚔️": {"class": "numeric", "title": "Total Vetoes"},
         "Veto": {"class": "border button"},
