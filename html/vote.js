@@ -197,7 +197,7 @@ function search()
     const terms = term.split(/\s+/);
 
     [...document.querySelectorAll("tr[game-id]")].forEach(row => {
-        const matches = terms.every(term => row.textContent.includes(term));
+        const matches = terms.every(term => row.textContent.toLowerCase().includes(term.toLowerCase()));
 
         row.style.display = matches ? "" : "none";
     });
