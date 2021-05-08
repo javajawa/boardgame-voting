@@ -99,7 +99,7 @@ class BoardList
 
     add(game, board)
     {
-        if (!Object.prototype.hasOwnProperty,call(this.games, game.id)) {
+        if (!Object.prototype.hasOwnProperty.call(this.games, game.id)) {
             this.games[game.id] = new BoardListElement(game);
         }
 
