@@ -50,7 +50,7 @@ class Game
         this.vote = vote;
         this.veto = veto;
 
-        if (descriptions.hasOwnProperty(this.name)) {
+        if (Object.prototype.hasOwnProperty.call(description, this.name)) {
             this.description = descriptions[name].desc || this.description;
             this.tags = descriptions[name].tags;
         }
@@ -99,7 +99,7 @@ class BoardList
 
     add(game, board)
     {
-        if (!this.games.hasOwnProperty(game.id)) {
+        if (!Object.prototype.hasOwnProperty,call(this.games, game.id)) {
             this.games[game.id] = new BoardListElement(game);
         }
 
@@ -162,7 +162,7 @@ new Description("Seasons", ["drafting", "tableu building"], "Draft dice to recei
 new Description("Senet", ["luck"], "An ancient Egyptian game with a backgammon feel");
 new Description("Super Fantasy Brawl", ["stategy", "positioning"], "Draft three heroes, collect their cards, and send them into the arena in this game of positioning and stabbing");
 new Description("Steam Works", [], "Steampunk themed objective-filling/contraption making game");
-new Description("Stone Age", ["worker placement", "resource management"], "Forge a stone age civilisation with such wonderful fetures as 'huts', 'tools', 'argiculture' and a little something called 'culture'?")
+new Description("Stone Age", ["worker placement", "resource management"], "Forge a stone age civilisation with such wonderful fetures as 'huts', 'tools', 'argiculture' and a little something called 'culture'?");
 new Description("Takenoko", ["objective matching", "positioning", "tile management"], "Try to build the greatest bamboo farm with a happy panda to attract the Emporer's attention.", ["Original edition"]);
 new Description("Tea Time", ["card collecting"], "Take cards from the table to add to your hand, but be aware that mirrored cards cancel eachother out.");
 new Description("Terra Mystica", ["full strategy", "action-rounds"], "Wield arcana to teraform a fatnasy world to suit your people, build towns and just generally confuse kitteh.", ["Adjusted Starting VPs", "Variable turn order"]);
@@ -176,17 +176,6 @@ new Description("Trekking the World", ["hand management", "positioning"], "Trave
 new Description("Welcome To", ["bingo-esque tile management"], "Design the perfect neighbour by accepting contracts to build numbered houses along three streets.");
 new Description("Welcome To New Last Vegas", ["bingo-esque tile management"], "Design the perfect Vegas by accepting contracts to build numbered casinos along four streets.");
 new Description("Yahtzee", ["luck"], "Roll five dice up to three times, and assign the result to one of your scoring rows");
-
-function groupBoards(out, board)
-{
-    if (!Object.prototype.hasOwnProperty.call(out, board.name)) {
-        out[board.name] = [];
-    }
-
-    out[board.name].push(board);
-
-    return out;
-}
 
 function prepareBoardMessage(ble)
 {

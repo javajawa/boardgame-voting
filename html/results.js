@@ -66,7 +66,7 @@ function filter_player_count(e)
 
     [...document.querySelectorAll("tbody>tr")].forEach(row => {
         if (players == 0) {
-            row.style.display = '';
+            row.style.display = "";
             return;
         }
 
