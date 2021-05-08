@@ -17,22 +17,25 @@ import sqlite3
 
 from boardgames.handler import FileData, Response, WSGIEnv
 from boardgames.auth_handler import AuthHandler
-from boardgames.model import Game, Realm, User, Vote, Veto
+from boardgames.model import Board, Game, Realm, User, Vote, Veto
 
 
 FILES: Dict[str, Tuple[str, str]] = {
-    "/boardgames.js": ("html/boardgames.js", "application/javascript"),
+    "/boards.js": ("html/boards.js", "application/javascript"),
     "/script.js": ("html/script.js", "application/javascript"),
     "/vote.js": ("html/vote.js", "application/javascript"),
     "/results.js": ("html/results.js", "application/javascript"),
     "/style.css": ("html/style.css", "text/css"),
     "/favicon.ico": ("html/favicon.png", "image/png"),
+    "/person.svg": ("html/person.svg", "image/svg+xml"),
+    "/seat.svg": ("html/seat.svg", "image/svg+xml"),
 }
 
 REALM_FILES: Dict[str, str] = {
     "": "html/welcome.html",
     "vote": "html/vote.html",
     "results": "html/results.html",
+    "boards": "html/boards.html",
 }
 
 
@@ -57,9 +60,6 @@ class BGHandler(AuthHandler):
     def call(self, verb: str, path: str, environ: WSGIEnv) -> Response:
         if verb == "GET" and path in self.files:
             return self.page_file(environ, self.files[path])
-
-        if path == "/games.json":
-            return self.send_all_games()
 
         realm_name, path = self.normalise_path(path)
 
@@ -107,6 +107,9 @@ class BGHandler(AuthHandler):
         if path == "results.json":
             return self.send_results(user.realm)
 
+        if path == "boards.json":
+            return self.send_boards_list(user.realm)
+
         if path == "me":
             return self.send_user_details(user)
 
@@ -130,15 +133,6 @@ class BGHandler(AuthHandler):
 
         return Response(204, "", b"")
 
-    def send_all_games(self) -> Response:
-        self.cursor.execute("SELECT [Game].[game_id] FROM [Game]")
-
-        ids = [x[0] for x in self.cursor.fetchall()]
-        games = Game.model(self.cursor).get_many(*ids)
-        data = [dataclasses.asdict(game) for game in games.values()]
-
-        return self.send_jsonp(data, "gameDetails")
-
     def send_games_list(self, realm: Realm) -> Response:
         self.cursor.execute(
             """
@@ -154,6 +148,14 @@ class BGHandler(AuthHandler):
         ids = [x[0] for x in self.cursor.fetchall()]
         games = Game.model(self.cursor).get_many(*ids)
         data = [dataclasses.asdict(game) for game in games.values()]
+
+        return self.send_json(data)
+
+    def send_boards_list(self, realm: Realm) -> Response:
+        model = Board.model(self.cursor)
+
+        boards = model.search(realm_id=[realm.realm_id, None])
+        data = [dataclasses.asdict(board) for board in boards]
 
         return self.send_json(data)
 

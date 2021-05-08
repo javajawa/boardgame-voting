@@ -14,6 +14,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     List,
     Optional,
     Set,
@@ -209,11 +210,11 @@ class Model(Generic[Table]):
         del rows
 
         for fkey, (okey, model) in self.foreigners.items():
-            fids: Set[int] = {row[fkey] for row in packed}
+            fids: Set[int] = {row[fkey] for row in packed if row[fkey]}
             frens = model.get_many(cursor, *fids)
 
             for row in packed:
-                row[okey] = frens[row[fkey]]
+                row[okey] = frens[row[fkey]] if row[fkey] else None
                 del row[fkey]
 
         output: Dict[int, Table] = {}
@@ -245,11 +246,36 @@ class Model(Generic[Table]):
                 raise AttributeError(f"{self.record.__name__} has no attribute {key}")
 
         def field(_field: str) -> str:
-            return f"[{_field}] = :{_field}"
+            if not isinstance(kwargs[_field], list):
+                return f"[{_field}] = :{_field}"
 
+            fields = []
+            i = 0
+            null = False
+
+            for value in kwargs[_field]:
+                if value is None:
+                    null = True
+                    continue
+
+                field = _field + "__" + str(i)
+                kwargs[field] = value
+                fields.append(":" + field)
+                i += 1
+
+            if not fields and null:
+                return f"[{_field}] IS NULL"
+
+            return (
+                f"([{_field}] IN ({', '.join(fields)})"
+                + (f" OR [{_field}] IS NULL" if null else "")
+                + ")"
+            )
+
+        args = list(kwargs.keys())
         sql = (
             f"SELECT {self.id_field} FROM [{self.table}] WHERE "
-            f"{' AND '.join(map(field, kwargs))}"
+            f"{' AND '.join(map(field, args))}"
         )
 
         _LOGGER.debug(sql)
@@ -268,7 +294,7 @@ class Model(Generic[Table]):
         data = dataclasses.asdict(record)
 
         for _field, (_attr, _model) in self.foreigners.items():
-            data[_field] = data[_attr][_field]
+            data[_field] = data[_attr][_field] if data[_attr] else None
             del data[_attr]
 
         fields = list(self.table_fields.keys())

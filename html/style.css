@@ -26,6 +26,27 @@ body
 	}
 }
 
+h2
+{
+	font-size: 1.6em;
+	margin: 1.2em 0 0;
+}
+
+h3
+{
+	font-size: 1.2em;
+	display: inline-block;
+	margin: 0 0 5px;
+}
+
+article
+{
+	border: 1px solid black;
+	border-radius: 10px;
+	padding: 10px;
+	margin: 10px 0;
+}
+
 table
 {
 	border-collapse: collapse;
@@ -57,12 +78,12 @@ td.number
 	text-align: center;
 }
 
-tr.voted
+.voted
 {
 	background: rgba(0, 255, 0, 0.1);
 }
 
-tr.vetoed
+.vetoed
 {
 	background: rgba(255, 0, 0, 0.1);
 }
@@ -96,11 +117,57 @@ nav
 	text-align: right;
 }
 
+p, ul
+{
+	margin: 0 0 0.5em;
+}
+
 a.btn
 {
 	border: 2px outset gray;
+	border-radius: 10px;
 	background: #c0c0c0;
 	font-size: 140%;
-	padding: 10px;
+	margin: 5px 0;
+	padding: 8px;
 	display: inline-block;
+}
+
+span.tag, span.category
+{
+	display: inline-block;
+	padding: 1px 3px;
+	background: #ccc;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	margin: 0 5px;
+	font-size: 0.6em;
+	vertical-align: middle;
+}
+
+.seatlist {
+	display: inline-block;
+	padding: 0 5px;
+}
+
+.seat {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	border-radius: 20px;
+	border: 1px solid #aaa;
+	vertical-align: middle;
+}
+
+.seat.taken {
+	background: #cfc;
+	background-image: url("person.svg");
+}
+.seat.needed {
+	background: #ffc;
+	background-image: url("seat.svg");
+}
+.seat.available {
+	background: #ccf;
+	background-image: url("seat.svg");
 }

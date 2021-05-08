@@ -20,6 +20,7 @@ import orm
 class Realm(orm.Modelled["Realm"]):
     realm_id: int
     realm: str
+    bga_group: Optional[int]
 
 
 @orm.data_model(["realm_id", "username"])
@@ -86,3 +87,19 @@ class Vote(orm.Joiner[User, Game]):
 class Veto(orm.Joiner[User, Game]):
     user: User
     game: Game
+
+
+@orm.data_model()
+@dataclass
+class Board(orm.Modelled["Board"]):
+    realm: Optional[Realm]
+    game: Game
+    link: str
+    # mods: List[str]
+    min_seats: int
+    max_seats: int
+    seats_taken: int
+    created: datetime.datetime
+    description: str
+
+    board_id: Optional[int] = None

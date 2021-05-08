@@ -5,35 +5,126 @@
 // vim: expandtab ts=4
 "use strict";
 
+import { elemGenerator, documentFragment } from "https://javajawa.github.io/elems.js/elems.js";
+
+const h2 = elemGenerator("h2");
+const h3 = elemGenerator("h3");
+
+const section = elemGenerator("section");
+const article = elemGenerator("article");
+const header = elemGenerator("header");
+const main = elemGenerator("main");
+const p = elemGenerator("p");
+const a = elemGenerator("a");
+const span = elemGenerator("span");
+const ul = elemGenerator("ul");
+const li = elemGenerator("li");
+const img = elemGenerator("img");
+
 class Description
 {
-	constructor(name, tags, desc, ignore)
-	{
-		this.tags = tags;
-		this.desc = desc;
-		this.skip = ignore || [];
+    constructor(name, tags, desc, ignore)
+    {
+        this.tags = tags;
+        this.desc = desc;
+        this.skip = ignore || [];
 
-		descriptions[name] = this;
-	}
+        descriptions[name] = this;
+    }
+}
+
+class Game
+{
+    constructor(id, name, description, link, image, complexity, strategy, luck, interaction, tags, vote, veto)
+    {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.image = image;
+        this.complexity = complexity;
+        this.strategy = strategy;
+        this.luck = luck;
+        this.interaction = interaction;
+        this.tags = tags;
+        this.vote = vote;
+        this.veto = veto;
+
+        if (descriptions.hasOwnProperty(this.name)) {
+            this.description = descriptions[name].desc || this.description;
+            this.tags = descriptions[name].tags;
+        }
+    }
 }
 
 class Board
 {
-	constructor(name, link, mods, seat, free)
-	{
-		this.name = name;
-		this.link = link;
-		this.mods = mods;
-		this.seat = seat;
-		this.free = free;
-	}
+    constructor(id, link, mods, description, created, minSeats, maxSeats, seatsTaken)
+    {
+        this.id = id;
+        this.link = link;
+        this.mods = mods;
+        this.description = description;
+        this.created = created;
+        this.minSeats = minSeats;
+        this.maxSeats = maxSeats;
+        this.seatsTaken = seatsTaken;
+    }
+
+    closes()
+    {
+        const closes = new Date(this.created);
+        closes.setDate(closes.getDate() + 3);
+
+        const hours = Math.floor((+closes - +new Date) / 3600000);
+
+        if (hours > 30) {
+            return Math.floor((hours + 6) / 24) + " days";
+        }
+
+        if (hours <= 3) {
+            return "less than " + hours + " hours";
+        }
+
+        return hours + " hours";
+    }
+}
+
+class BoardList
+{
+    constructor()
+    {
+        this.games = {};
+    }
+
+    add(game, board)
+    {
+        if (!this.games.hasOwnProperty(game.id)) {
+            this.games[game.id] = new BoardListElement(game);
+        }
+
+        this.games[game.id].add(board);
+    }
+}
+
+class BoardListElement
+{
+    constructor(game)
+    {
+        this.game = game;
+        this.boards = [];
+    }
+
+    add(board)
+    {
+        this.boards.push(board);
+    }
 }
 
 const descriptions = {};
 
 // :exclamation:
 new Description("7 Wonders", ["drafting"], "Draft your way into a new empire!");
-new Description("7 Wonders Duel", ["planning"], "");
+new Description("7 Wonders Duel", ["planning"], null);
 new Description("Abyss", [], ":exclamation: Control factions, influence the court and reign over underwater realms!");
 new Description("Beyond the Sun", [], "Beyond the Sun is a space civilization game in which players collectively decide the technological progress of humankind at the dawn of the Spacefaring Era, while competing against each other to be the leading faction in economic development, science, and galactic influence.");
 new Description("Chakra", ["planning"], "Use your limited action tokens to fill the seven chakras that represent the energy flowing in their body. To score points, a player must harmonize each of their chakras in the best possible way.");
@@ -56,7 +147,7 @@ new Description("Hardback", ["word forming", "deck building"], "Use your deck of
 new Description("Kingdom Builder", ["objective matching", "positioning"], "Draw a terrain card, add to your contiguous kingdom using that terrain, meet conditions");
 new Description("Kingdomino", ["tile management"], "Build your kingdom out of dominos! draft a domino at a time, place it in your 5x5 grid, and score points based on areas of the same terrain.");
 new Description("Nidavellir", ["bidding"], "Recruit dwarf heroes for glory; collect suited sets to combine their powers, or collect set of suits to summon mighty heroes");
-new Description("No Thanks!", ["bidding"], "Big tokens to not pick up cards, or take a card and all the tokens on it! Lowest total score wins!", ["Hidden chips"]);
+new Description("No Thanks!", ["bidding"], "Bid tokens to not pick up cards, or take a card and all the tokens on it! Lowest total score wins!", ["Hidden chips"]);
 new Description("Oriflamme", ["hand management", "positioning"], "Over six rounds, add one of ten powers cards to hidden queue of effects between all players, and attempt to out-wite your opponents");
 new Description("Quantum", ["strategy"], "Roll and fleet of ships and attempt to conquer the galaxy by placing your Qunatum cubes on planets");
 new Description("Potion Explosion", [], "Brew poitions by picking ingreidents out of the dispenser...but with a candy-crush like twist: if taking an ingreident causes two (or more) of the same colour to match, you get those too!");
@@ -85,180 +176,150 @@ new Description("Welcome To", ["bingo-esque tile management"], "Design the perfe
 new Description("Welcome To New Last Vegas", ["bingo-esque tile management"], "Design the perfect Vegas by accepting contracts to build numbered casinos along four streets.");
 new Description("Yahtzee", ["luck"], "Roll five dice up to three times, and assign the result to one of your scoring rows");
 
-function getAllBoards()
-{
-	// Get all async games available for joining on the page
-	return [...document.querySelectorAll('.gametable_status_asyncopen')]
-	// Extract these into board information
-	.map(board => {
-		const name = board.querySelector(".gameinfoname").textContent;
-		const link = new URL(board.querySelector("a").getAttribute("href"), window.location);
-		const stati = [...board.querySelectorAll('.table_top_status_detailed div')]
-			.map(s => s.textContent.split(/, /))
-			.flat()
-			.filter(x => !!x);
-		const seats = board.querySelectorAll(".tableplace").length;
-		const freeSeats = board.querySelectorAll(".tableplace_freeplace").length;
-
-		return new Board(name, link, stati, seats, freeSeats);
-	});
-}
-
 function groupBoards(out, board)
 {
-	if (!Object.prototype.hasOwnProperty.call(out, board.name)) {
-		out[board.name] = [];
-	}
+    if (!Object.prototype.hasOwnProperty.call(out, board.name)) {
+        out[board.name] = [];
+    }
 
-	out[board.name].push(board);
+    out[board.name].push(board);
 
-	return out;
+    return out;
 }
 
-function prepareBoardMessage(boards)
+function prepareBoardMessage(ble)
 {
-	const game = boards[0].name;
-	let description;
+    const game = ble.game;
 
-	if (descriptions.hasOwnProperty(game)) {
-		description = descriptions[game];
-	} else {
-		description = new Description(game, [], "", []);
-	}
-
-	const output = [`**${game}**`];
-
-	if (description.tags.length) {
-		output.push("[" + description.tags.join(", ") + "]");
-	}
-
-	boards.forEach(board => {
-		const tags = board.mods
-			.filter(tag => description.skip.indexOf(tag) === -1)
-			//.filter(tag => tag !== group);
-
-		if (tags.length) {
-			output.push(`<${board.link.toString()}> (${tags.join(', ')})`);
-		} else {
-			output.push(`<${board.link.toString()}>`);
-		}
-	});
-
-	if (description.desc) {
-		output.push("\n" + description.desc);
-	}
-
-	return output.join(" ") + "\n";
+    return article(
+        {"class": (game.vote ? "voted" : "") + (game.veto ? "vetoed" : "")},
+        img({"src": game.image, "style": "max-width: 200px; max-height: 100px; float: left; margin: 0 5px 10px 0;"}),
+        header(
+            h3(game.name),
+            game.tags.map(tag => span(tag, {"class": "category"}))
+        ),
+        main(p(game.description)),
+        ul({"style": "clear: left;"}, ble.boards.map(board => main(
+            li(
+                a(
+                    {href: board.link.toString(), target: "_blank"},
+                    "View Table",
+                ),
+                board.mods.map(tag => span(tag, {"class": "tag"})),
+                span(
+                    {"class": "seatlist " + (board.seatsTaken < board.seatsMin ? "will-fire" : "needs-people")},
+                    [...Array(board.maxSeats).keys()].map(seat => {
+                        if (seat < board.seatsTaken) {
+                            return span({"class": "seat taken"});
+                        }
+                        if (seat < board.minSeats) {
+                            return span({"class": "seat needed"});
+                        }
+                        return span({"class": "seat available"});
+                    })
+                ),
+                span(`(Closes in ${board.closes()})`),
+                board.description ? p(board.description) : null,
+            )
+        )))
+    );
 }
 
-function getBoards(group)
+function getBoards(filter, boards, me)
 {
-	// Get all the boards
-	return getAllBoards()
-		// Select only the ones which are part of the group
-		.filter(board => board.mods.indexOf(group) !== -1)
-		// Remove that group from the tags, as it is not relevant
-		.map(board => {
-			const idx = board.mods.indexOf(group);
-			board.mods.splice(idx, 1);
+    const list = new BoardList();
 
-			return board;
-		});
+    filter(boards).forEach(data => {
+        const game = new Game(
+            data.game.game_id,
+            data.game.name,
+            data.game.description,
+            data.game.link,
+            data.game.image,
+            data.game.complexity,
+            data.game.strategy,
+            data.game.luck,
+            data.game.interaction,
+            [], // tags,
+            me.votes.includes(data.game.game_id),
+            me.vetos.includes(data.game.game_id),
+        );
+
+        let table_description = data.description;
+        let table_modifiers = [];
+
+        const match = /\[([^\]]+)\]/.exec(table_description);
+        if (match) {
+            table_modifiers = match[1].split(",").map(x => x.trim()).filter(x => x);
+            table_description = table_description.replace(/\[[^\]]+\]/, "");
+        }
+
+        const board = new Board(
+            data.board_id,
+            data.link,
+            table_modifiers,
+            table_description,
+            new Date(data.created),
+            data.min_seats,
+            data.max_seats,
+            data.seats_taken,
+        );
+
+        list.add(game, board);
+    });
+
+    return Object.values(list.games);
 }
 
-function getGroupBoards(group)
+function getGroupBoards(boards)
 {
-	// Get and group all boards for the group
-	return Object.values(
-		getBoards(group)
-			.reduce(groupBoards, new Object())
-	)
-	// Translate each board group into text
-	.map(prepareBoardMessage)
-	.sort()
+    return boards.filter(board => board.realm !== null);
 }
 
-
-function getSharedBoards()
+function getSharedBoards(boards)
 {
-	return Object.values(
-		getBoards("CuddlyKitteh's friends")
-			.filter(board => board.seat > 2)
-			.reduce(groupBoards, new Object())
-	)
-	// Translate each board group into text
-	.map(prepareBoardMessage)
-	.sort();
+    return boards
+        .filter(board => board.realm === null)
+        .filter(board => board.max_seats !== 2)
+    ;
 }
 
-function getChallengeBoards()
+function getChallengeBoards(boards)
 {
-	return Object.values(
-		getBoards("CuddlyKitteh's friends")
-			.filter(board => board.seat === 2)
-			.reduce(groupBoards, new Object())
-	)
-	// Translate each board group into text
-	.map(prepareBoardMessage)
-	.sort();
+    return boards
+        .filter(board => board.realm === null)
+        .filter(board => board.max_seats === 2)
+    ;
 }
 
-function addMessage(messages, message)
+function createBlock(title, filter, boards, me)
 {
-	if (message.length + messages[0].length > 1995) {
-		messages.unshift("");
-	}
+    const list = getBoards(filter, boards, me);
 
-	messages[0] = messages[0] + "\n" + message;
+    if (list.length === 0) {
+        return null;
+    }
 
-	return messages;
+    return section(
+        header(h2(title)),
+        main(list.map(prepareBoardMessage))
+    );
 }
 
-function prepareboardGames(group)
-{
-	let messages = getGroupBoards(group).reduce(addMessage, [" ".repeat(200)])
+Promise.all([
+    fetch("boards.json").then(r => r.json()),
+    fetch("me").then(r => r.json())
+]).then(r => {
+    const boards = r[0];
+    const me = r[1];
 
-	const shared = getSharedBoards();
+    const content = documentFragment(
+        ...[
+            createBlock("This Community", getGroupBoards, boards, me),
+            createBlock("Cross-Community Boards", getSharedBoards, boards, me),
+            createBlock("Challenge Kitteh", getChallengeBoards, boards, me)
+        ].filter(x=>x)
+    );
 
-	if (shared.length) {
-		messages = addMessage(messages, "\n=== Cross-Community Boards ===\n")
-		messages = shared.reduce(addMessage, messages);
-	}
-
-	const challenge = getChallengeBoards();
-
-	if (challenge.length) {
-		messages = addMessage(messages, "\n=== Challenge Kitteh ===\n")
-		messages = challenge.reduce(addMessage, messages);
-	}
-
-	return messages.filter(x => !!x).reverse();
-}
-
-function createMessages(group) {
-	const messages = prepareboardGames(group);
-
-	if (messages.length) {
-		console.log("======", group, "======");
-		messages.forEach(m => console.log(m));
-	}
-}
-
-const gameDetails = r =>
-{
-	r.forEach(game => {
-		if (descriptions.hasOwnProperty(game.name))
-			return;
-
-		new Description(game.name, [], ":exclamation: " + game.description);
-	});
-
-	console.log("createMessages(<group>) loaded!");
-	console.log("createMessages('Plaid Posse');");
-	console.log("createMessages('Brew Crew');");
-	console.log("createMessages('CursedChat');");
-};
-
-x = document.createElement("script");
-x.setAttribute("src", "https://games.tea-cats.co.uk/games.json");
-document.head.appendChild(x);
+    document.body.appendChild(content);
+});
