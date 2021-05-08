@@ -49,10 +49,9 @@ class BoardImporter(contextlib.ContextDecorator):
 
         return self
 
-    def __exit__(self, *exc: Any) -> bool:
+    def __exit__(self, *exc: Any) -> None:
         self.connection.commit()
         self.cursor.close()
-        return False
 
     @staticmethod
     def get_bga_game_id(game: Game) -> Optional[int]:
@@ -106,7 +105,7 @@ class BoardImporter(contextlib.ContextDecorator):
                 int(table["max_player"]),
                 len(table["players"]),
                 datetime.datetime.utcfromtimestamp(int(table["scheduled"])),
-                table["presentation"]
+                table["presentation"],
             )
         )
 

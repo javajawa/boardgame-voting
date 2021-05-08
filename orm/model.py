@@ -14,7 +14,6 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
     List,
     Optional,
     Set,
@@ -235,6 +234,34 @@ class Model(Generic[Table]):
 
         return list(self.get_many(cursor, *ids).values())
 
+    @classmethod
+    def field(cls, _field: str, **kwargs: Any) -> str:
+        if not isinstance(kwargs[_field], list):
+            return f"[{_field}] = :{_field}"
+
+        fields = []
+        i = 0
+        null = False
+
+        for value in kwargs[_field]:
+            if value is None:
+                null = True
+                continue
+
+            field = _field + "__" + str(i)
+            kwargs[field] = value
+            fields.append(":" + field)
+            i += 1
+
+        if not fields and null:
+            return f"[{_field}] IS NULL"
+
+        return (
+            f"([{_field}] IN ({', '.join(fields)})"
+            + (f" OR [{_field}] IS NULL" if null else "")
+            + ")"
+        )
+
     def search(self, cursor: sqlite3.Cursor, **kwargs: Any) -> List[Table]:
         for name, model in self.foreigners.values():
             if name in kwargs and isinstance(kwargs[name], model.record):
@@ -245,37 +272,10 @@ class Model(Generic[Table]):
             if key not in self.searchable_fields:
                 raise AttributeError(f"{self.record.__name__} has no attribute {key}")
 
-        def field(_field: str) -> str:
-            if not isinstance(kwargs[_field], list):
-                return f"[{_field}] = :{_field}"
-
-            fields = []
-            i = 0
-            null = False
-
-            for value in kwargs[_field]:
-                if value is None:
-                    null = True
-                    continue
-
-                field = _field + "__" + str(i)
-                kwargs[field] = value
-                fields.append(":" + field)
-                i += 1
-
-            if not fields and null:
-                return f"[{_field}] IS NULL"
-
-            return (
-                f"([{_field}] IN ({', '.join(fields)})"
-                + (f" OR [{_field}] IS NULL" if null else "")
-                + ")"
-            )
-
         args = list(kwargs.keys())
         sql = (
             f"SELECT {self.id_field} FROM [{self.table}] WHERE "
-            f"{' AND '.join(map(field, args))}"
+            f"{' AND '.join(map(lambda x: Model.field(x, **kwargs), args))}"
         )
 
         _LOGGER.debug(sql)
