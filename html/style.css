@@ -13,8 +13,18 @@ body
 	max-width: 60rem;
 	margin: 0 auto;
 	padding: 0 2em;
-	background: #333;
+	background: #444;
 	color: #ccc;
+}
+
+a
+{
+	color: #66f;
+}
+
+a:visited
+{
+	color: #86e;
 }
 
 @media (prefers-color-scheme: light)
@@ -137,7 +147,7 @@ span.tag, span.category
 {
 	display: inline-block;
 	padding: 1px 3px;
-	background: #ccc;
+	background: #888;
 	border: 1px solid #ccc;
 	border-radius: 6px;
 	margin: 0 5px;

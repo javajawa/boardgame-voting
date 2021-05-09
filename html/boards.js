@@ -207,7 +207,9 @@ function prepareBoardMessage(ble)
                         return span({"class": "seat available"});
                     })
                 ),
-                span(`(Closes in ${board.closes()})`),
+                board.seatsTaken < board.minSeats ?
+                    span(`(Needs ${board.minSeats - board.seatsTaken} players to launch in ${board.closes()})`) :
+                    span(`(Will launch in ${board.closes()})`),
                 board.description ? p(board.description) : null,
             )
         )))
