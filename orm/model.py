@@ -234,31 +234,31 @@ class Model(Generic[Table]):
 
         return list(self.get_many(cursor, *ids).values())
 
-    @classmethod
-    def field(cls, _field: str, **kwargs: Any) -> str:
-        if not isinstance(kwargs[_field], list):
-            return f"[{_field}] = :{_field}"
+    @staticmethod
+    def where_clause(field: str, kwargs: Dict[str, Any]) -> str:
+        if not isinstance(kwargs[field], list):
+            return f"[{field}] = :{field}"
 
         fields = []
         i = 0
         null = False
 
-        for value in kwargs[_field]:
+        for value in kwargs[field]:
             if value is None:
                 null = True
                 continue
 
-            field = _field + "__" + str(i)
-            kwargs[field] = value
-            fields.append(":" + field)
+            subfield = field + "__" + str(i)
+            kwargs[subfield] = value
+            fields.append(":" + subfield)
             i += 1
 
         if not fields and null:
-            return f"[{_field}] IS NULL"
+            return f"[{field}] IS NULL"
 
         return (
-            f"([{_field}] IN ({', '.join(fields)})"
-            + (f" OR [{_field}] IS NULL" if null else "")
+            f"([{field}] IN ({', '.join(fields)})"
+            + (f" OR [{field}] IS NULL" if null else "")
             + ")"
         )
 
@@ -273,10 +273,12 @@ class Model(Generic[Table]):
                 raise AttributeError(f"{self.record.__name__} has no attribute {key}")
 
         args = list(kwargs.keys())
-        sql = (
-            f"SELECT {self.id_field} FROM [{self.table}] WHERE "
-            f"{' AND '.join(map(lambda x: Model.field(x, **kwargs), args))}"
-        )
+        clauses = list()
+
+        for arg in args:
+            clauses.append(self.where_clause(arg, kwargs))
+
+        sql = f"SELECT {self.id_field} FROM [{self.table}] WHERE " + " AND ".join(clauses)
 
         _LOGGER.debug(sql)
         _LOGGER.debug(kwargs)
