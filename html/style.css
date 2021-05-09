@@ -64,7 +64,7 @@ table
 	border: 1px solid black;
 }
 
-tbody>tr:nth-child(2n):not(.voted):not(.vetoed)
+tbody>tr:nth-child(2n):not(.voted):not(.avoted):not(.vetoed)
 {
 	background: rgba(255, 255, 0, 0.1);
 }
@@ -88,7 +88,7 @@ td.number
 	text-align: center;
 }
 
-.voted
+.voted, .avoted
 {
 	background: rgba(0, 255, 0, 0.1);
 }
@@ -98,17 +98,17 @@ td.number
 	background: rgba(255, 0, 0, 0.1);
 }
 
-td.vote, td.veto
+td.vote, td.avote, td.veto
 {
 	font-size: 0;
 }
 
-td.vote::after {
+td.vote::after, td.avote::after {
 	content: "✅";
 	font-size: 12pt;
 }
 
-tr.voted>td.vote::after {
+tr.voted>td.vote::after, tr.avoted>td.avote::after {
 	content: "×";
 }
 

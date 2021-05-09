@@ -36,16 +36,9 @@ function make_details(_summary, _details)
 
 function game_to_tr(game)
 {
-    let vote;
-
-    if (game.voted) {
-        vote = [td("0", {"class": "border vote", "click": toggleVote}, "vote"), {"class": "voted"}];
-    } else {
-        vote = [td("1", {"class": "border vote", "click": toggleVote}, "vote")];
-    }
-
     return tr(
         {"game-id": game.game_id},
+        {"class": [game.voted ? "voted" : "", game.avoted ? "avoted" : ""].join(" ")},
         td(a({"href": game.link || "", target: "_blank"}, game.platform), {"class": "border"}),
         td(make_details(game.name, game.description), {"class": "border"}),
         number_to_td(game.min_players, "players", "border"),
@@ -55,11 +48,20 @@ function game_to_tr(game)
         number_to_td(game.strategy, "complexity", ""),
         number_to_td(game.luck, "complexity", ""),
         number_to_td(game.interaction, "complexity", ""),
-        ...vote
+        game.realm.realtime ?
+            td(
+                (1-game.voted).toString(),
+                {"class": "border vote", "click": toggleVote}
+            ) : null,
+        game.realm.passnplay ?
+            td(
+                (1-game.avoted).toString(),
+                {"class": "border avote", "click": toggleVote}
+            ) : null,
     );
 }
 
-function table_superheaders()
+function table_superheaders(realm)
 {
     const searchbox = input({id: "search", type: "text", keyup: search});
 
@@ -67,11 +69,11 @@ function table_superheaders()
         th("Search", searchbox, {"colspan": 2, "class": "border"}),
         th("Players", {"colspan": 3, "class": "border"}),
         th("Complexity", {"colspan": 4, "class": "border"}),
-        th("", {"colspan": 1, "class": "border"}),
+        th("Votes", {"colspan": realm.realtime + realm.passnplay, "class": "border"}),
     );
 }
 
-function table_headers()
+function table_headers(realm)
 {
     const headings = {
         "Platform": {"class": "border"},
@@ -83,8 +85,14 @@ function table_headers()
         "♜": {"class": "numeric", "title": "Strategy / Planning"},
         "⚅": {"class": "numeric", "title": "Luck"},
         "⚔️": {"class": "numeric", "title": "Interaction Between Players"},
-        "Vote": {"class": "border default_sort button"},
-    };
+    }
+
+    if (realm.realtime) {
+        headings["RT"] = {"class": "border default_sort button", "title": "Real Time"};
+    }
+    if (realm.passnplay) {
+        headings["P'n'P"] = {"class": "border default_sort button", "title": "Pass and Play"};
+    }
 
     return tr(
         Object.entries(headings).map((h) => th(...h, {"click": sortTable}))
@@ -101,10 +109,12 @@ Promise.all([
 
     return games.map(game => {
         game.voted = (me.votes.indexOf(game.game_id) !== -1);
+        game.avoted = (me.avotes.indexOf(game.game_id) !== -1);
+        game.realm = me.realm;
         return game;
     });
 }).then(games => table(
-    thead(table_superheaders(), table_headers()),
+    thead(table_superheaders(games[0].realm), table_headers(games[0].realm)),
     tbody(games.map(game_to_tr))
 ))
     .then(table=>document.body.appendChild(table))
@@ -117,8 +127,9 @@ function toggleVote( event )
 {
     const cell = event.target;
     const row  = event.target.closest("tr");
+    const type = event.target.classList.contains("vote") ? "voted" : "avoted";
 
-    cell.textContent = 1 - row.classList.toggle("voted");
+    cell.textContent = 1 - row.classList.toggle(type);
 
     if (bounceTimer) {
         return;
@@ -132,8 +143,10 @@ function sendVotes()
     bounceTimer = null;
 
     const games = [...document.querySelectorAll("tr.voted")].map(e => e.getAttribute("game-id"));
+    const agames = [...document.querySelectorAll("tr.avoted")].map(e => e.getAttribute("game-id"));
 
-    console.log("Sending votes for", games);
+    console.log("Sending realtime votes for", games);
+    console.log("Sending async votes for", agames);
 
     fetch(
         "vote",
@@ -143,6 +156,15 @@ function sendVotes()
             body: JSON.stringify(games)
         }
     ).then(document.querySelector(".js-votes").textContent = games.length);
+
+    fetch(
+        "avote",
+        {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(agames)
+        }
+    ).then(document.querySelector(".js-avotes").textContent = games.length);
 }
 
 

@@ -232,7 +232,7 @@ function getBoards(filter, boards, me)
             data.game.luck,
             data.game.interaction,
             [], // tags,
-            me.votes.includes(data.game.game_id),
+            me.avotes.includes(data.game.game_id),
             me.vetos.includes(data.game.game_id),
         );
 

@@ -11,6 +11,8 @@ const table = elemGenerator("table");
 const tbody = elemGenerator("tbody");
 const thead = elemGenerator("thead");
 
+const h2 = elemGenerator("h2");
+
 const tr = elemGenerator("tr");
 const th = elemGenerator("th");
 const td = elemGenerator("td");
@@ -91,28 +93,43 @@ function table_headers()
     );
 }
 
-
 Promise.all([
     fetch("results.json").then(r => r.json()),
     fetch("me").then(r => r.json())
 ]).then(r => {
-    const games = r[0];
+    let games, agames;
+    games = r[0]["results"];
+    agames = r[0]["aresults"];
+
     const me = r[1];
 
-    return games.map(game => {
+    if (games.length) {
+        process(games, h2("Real Time"));
+    }
+    if (agames.length) {
+        process(agames, h2("Pass and Play"));
+    }
+});
+
+const process = (games, header) => new Promise((a,r) => a(games))
+.then(games =>
+    games.map(game => {
         game.voted = (me.votes.indexOf(game.game_id) !== -1);
         game.vetoed = (me.vetos.indexOf(game.game_id) !== -1);
         game.score = game.votes - 4 * game.vetos;
         return game;
-    });
-}).then(games => {
+    })
+).then(games => {
     games.sort((a, b) => b.score - a.score);
     return games;
 }).then(games => table(
     thead(table_headers()),
     tbody(games.map(game_to_tr))
 ))
-    .then(table=>document.body.appendChild(table))
+    .then(table=> {
+        document.body.appendChild(header)
+        document.body.appendChild(table)
+    })
     .catch(e => console.error(e));
 
 let bounceTimer;

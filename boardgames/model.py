@@ -22,7 +22,10 @@ import orm
 class Realm(orm.Modelled["Realm"]):
     realm_id: int
     realm: str
+    realm_name: str
     bga_group: Optional[int]
+    realtime: bool = True
+    passnplay: bool = True
 
 
 @orm.data_model(["realm_id", "username"])
@@ -80,6 +83,13 @@ class RealmBlacklist(orm.Joiner[Realm, Game]):
 @orm.join_model
 @dataclass
 class Vote(orm.Joiner[User, Game]):
+    user: User
+    game: Game
+
+
+@orm.join_model
+@dataclass
+class AsyncVote(orm.Joiner[User, Game]):
     user: User
     game: Game
 

@@ -17,7 +17,7 @@ import sqlite3
 
 from boardgames.handler import FileData, Response, WSGIEnv
 from boardgames.auth_handler import AuthHandler
-from boardgames.model import Board, Game, Realm, User, Vote, Veto
+from boardgames.model import AsyncVote, Board, Game, Realm, User, Vote, Veto
 
 
 FILES: Dict[str, Tuple[str, str]] = {
@@ -116,11 +116,13 @@ class BGHandler(AuthHandler):
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
     def put_request(self, user: User, path: str, data: IO[bytes]) -> Response:
-        if path not in ["vote", "veto"]:
+        mapping = {"vote": Vote.model, "avote": AsyncVote.model, "veto": Veto.model}
+
+        if path not in mapping:
             return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
         game_model = Game.model(self.cursor)
-        vote_model = Vote.model(self.cursor) if path == "vote" else Veto.model(self.cursor)
+        vote_model = mapping[path](self.cursor)
 
         vote_model.clear_left(user)
 
@@ -164,14 +166,43 @@ class BGHandler(AuthHandler):
             "username": user.username,
             "role": user.role,
             "votes": Vote.model(self.cursor).ids_for_left(user),
+            "avotes": AsyncVote.model(self.cursor).ids_for_left(user),
             "vetos": Veto.model(self.cursor).ids_for_left(user),
             "max_votes": 8,
             "max_vetos": 3,
+            "realm": dataclasses.asdict(user.realm),
         }
 
         return self.send_json(data)
 
     def send_results(self, realm: Realm) -> Response:
+        votes, vetoes = self.get_realtime_votes(realm)
+        avotes, avetoes = self.get_passnplay_votes(realm)
+
+        game_ids = (
+            set(votes.keys()).union(vetoes.keys()).union(avotes.keys()).union(avetoes.keys())
+        )
+        games = Game.model(self.cursor).get_many(*game_ids)
+
+        data = []
+        adata = []
+
+        for game in games.values():
+            if game.game_id in votes:
+                datum = dataclasses.asdict(game)
+                datum["votes"] = votes.get(game.game_id, 0)
+                datum["vetos"] = vetoes.get(game.game_id, 0)
+                data.append(datum)
+
+            if game.game_id in avotes:
+                datum = dataclasses.asdict(game)
+                datum["votes"] = avotes.get(game.game_id, 0)
+                datum["vetos"] = avetoes.get(game.game_id, 0)
+                adata.append(datum)
+
+        return self.send_json({"results": data, "aresults": adata})
+
+    def get_realtime_votes(self, realm: Realm) -> Tuple[Dict[int, int], Dict[int, int]]:
         self.cursor.execute(
             """
             SELECT [game_id], COUNT(0)
@@ -198,18 +229,33 @@ class BGHandler(AuthHandler):
 
         vetos: Dict[int, int] = dict(self.cursor.fetchall())
 
-        game_ids = set(votes.keys()).union(vetos.keys())
+        return (votes, vetos)
 
-        games = Game.model(self.cursor).get_many(*game_ids)
-        data = []
+    def get_passnplay_votes(self, realm: Realm) -> Tuple[Dict[int, int], Dict[int, int]]:
+        self.cursor.execute(
+            """
+            SELECT [game_id], COUNT(0)
+            FROM [AsyncVote] JOIN [User] USING ([user_id])
+            WHERE [realm_id] = ?
+            GROUP BY [game_id]
+            ORDER BY COUNT(0) DESC
+            """,
+            (realm.realm_id,),
+        )
 
-        for game_id in game_ids:
-            if game_id not in games:
-                continue
+        votes: Dict[int, int] = dict(self.cursor.fetchall())
 
-            game = dataclasses.asdict(games[game_id])
-            game["votes"] = votes.get(game_id, 0)
-            game["vetos"] = vetos.get(game_id, 0)
-            data.append(game)
+        self.cursor.execute(
+            """
+            SELECT [game_id], COUNT(0)
+            FROM [Veto] JOIN [User] USING ([user_id])
+            WHERE [realm_id] = ?
+            GROUP BY [game_id]
+            ORDER BY COUNT(0) DESC
+            """,
+            (realm.realm_id,),
+        )
 
-        return self.send_json(data)
+        vetos: Dict[int, int] = dict(self.cursor.fetchall())
+
+        return (votes, vetos)
