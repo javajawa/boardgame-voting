@@ -25,6 +25,7 @@ FILES: Dict[str, Tuple[str, str]] = {
     "/script.js": ("html/script.js", "application/javascript"),
     "/vote.js": ("html/vote.js", "application/javascript"),
     "/results.js": ("html/results.js", "application/javascript"),
+    "/overview.js": ("html/overview.js", "application/javascript"),
     "/style.css": ("html/style.css", "text/css"),
     "/favicon.ico": ("html/favicon.png", "image/png"),
     "/person.svg": ("html/person.svg", "image/svg+xml"),
@@ -36,6 +37,7 @@ REALM_FILES: Dict[str, str] = {
     "vote": "html/vote.html",
     "results": "html/results.html",
     "boards": "html/boards.html",
+    "overview": "html/overview.html",
 }
 
 
@@ -110,6 +112,9 @@ class BGHandler(AuthHandler):
         if path == "boards.json":
             return self.send_boards_list(user.realm)
 
+        if path == "overview.json":
+            return self.send_votes_overview()
+
         if path == "me":
             return self.send_user_details(user)
 
@@ -158,6 +163,38 @@ class BGHandler(AuthHandler):
 
         boards = model.search(realm_id=[realm.realm_id, None])
         data = [dataclasses.asdict(board) for board in boards]
+
+        return self.send_json(data)
+
+    def send_votes_overview(self) -> Response:
+        self.cursor.execute(
+            """
+            SELECT
+                game_id,
+                COUNT(CASE WHEN realm_id = 1 THEN 1 END),
+                COUNT(CASE WHEN realm_id = 2 THEN 1 END),
+                COUNT(CASE WHEN realm_id = 3 THEN 1 END),
+                COUNT(CASE WHEN realm_id = 10 THEN 1 END),
+                COUNT(0)
+            FROM Game
+            NATURAL JOIN AsyncVote
+            NATURAL JOIN User
+            WHERE realm_id IN (1,2,3,10)
+            GROUP BY game_id
+            ORDER BY COUNT(0) DESC
+            """
+        )
+
+        rows = self.cursor.fetchall()
+
+        games = Game.model(self.cursor).get_many(*[r[0] for r in rows])
+
+        keys = ["game", "link", "plaid", "brew", "cursed", "lrr", "total"]
+        data = []
+
+        for row in rows:
+            game = games[row[0]]
+            data.append(dict(zip(keys, [game.name, game.link, *row[1:]])))
 
         return self.send_json(data)
 

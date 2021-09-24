@@ -73,7 +73,12 @@ class BoardImporter(contextlib.ContextDecorator):
         )
         data = request.json()
 
-        for table in data["data"]["tables"].values():
+        tables = data["data"]["tables"]
+
+        if not tables:
+            return
+
+        for table in tables.values():
             self.process_table(table)
 
     def process_table(self, table: Dict[str, Any]) -> None:
