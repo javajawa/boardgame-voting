@@ -39,7 +39,10 @@ class Response:
         return str(self.status)
 
     def get_headers(self) -> List[Tuple[str, str]]:
-        headers: Dict[str, str] = {"Content-Type": self.mime_type}
+        headers: Dict[str, str] = {
+            "Content-Type": self.mime_type,
+            "Cache-Control": "private, max-age=0",
+        }
 
         if self.modified:
             headers["Last-Modified"] = format_date_time(self.modified)
@@ -83,7 +86,6 @@ class Handler(abc.ABC):
 
         response = self.call(verb, path, environ)
 
-        print(verb, path, response.get_status(), response.get_headers())
         start(response.get_status(), response.get_headers())
 
         return response.get_contents()
