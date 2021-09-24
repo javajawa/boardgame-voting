@@ -308,7 +308,7 @@ Promise.all([
         ...[
             createBlock("This Community", getGroupBoards, boards, me),
             createBlock("Cross-Community Boards", getSharedBoards, boards, me),
-            createBlock("Challenge Kitteh", getChallengeBoards, boards, me)
+            createBlock("Challenge Kitsune", getChallengeBoards, boards, me)
         ].filter(x=>x)
     );
 

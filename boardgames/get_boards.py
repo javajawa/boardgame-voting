@@ -139,6 +139,9 @@ def main() -> None:
             LOGGER.info("Loading board from Kitteh")
             importer.import_by_user(88078650)
 
+            LOGGER.info("Loading board from Kitsune")
+            importer.import_by_user(89099486)
+
             LOGGER.info("Saving boards")
             importer.store()
 
