@@ -26,17 +26,15 @@ def update_bga(model: ModelWrapper[Game]) -> None:
     soup = BeautifulSoup(html.content, "html.parser")
 
     game_list = soup.find("select", id="gamelist_gameselect")
-    new_games = [
-        x.text for x in game_list.find_all("option") if x.text and x.text not in existing
-    ]
 
-    for data in soup.find(id="gamecategory_wrap_all").find_all("div", class_="gamelist_item"):
+    for data in soup.find_all("div", class_="gamelist_item"):
         name = data.find("div", class_="gamename").text.strip()
 
-        if name not in new_games:
+        if name in existing:
             continue
 
         print(f"New BGA Game: {name}")
+        existing.append(name)
         game = fill_game_data(Game(platform="BGA", name=name), data)
         model.store(game)
 

@@ -11,12 +11,18 @@ from typing import Any, Dict, List, Optional
 
 import contextlib
 import datetime
+import logging
 import time
 import sqlite3
 
 import requests
 
+from systemd.journal import JournalHandler  # type: ignore
+
 from boardgames.model import Board, Game, Realm
+
+
+LOGGER = logging.getLogger("boardgames")
 
 
 class BoardImporter(contextlib.ContextDecorator):
@@ -76,6 +82,7 @@ class BoardImporter(contextlib.ContextDecorator):
         tables = data["data"]["tables"]
 
         if not tables:
+            LOGGER.info("No tables found")
             return
 
         for table in tables.values():
@@ -85,17 +92,18 @@ class BoardImporter(contextlib.ContextDecorator):
         game_id = int(table["game_id"])
 
         if game_id not in self.games:
-            print(f"Unable to find game '{table['game_name']}' in database")
+            LOGGER.error(f"Unable to find game '{table['game_name']}' in database")
             return
 
         if table["filter_group_type"] is None:
+            LOGGER.warning("Missing filter group for board")
             return
 
         realm: Optional[Realm] = None
 
         if table["filter_group_type"] == "normal":
             if int(table["filter_group"]) not in self.realms:
-                print(f"Unknown group {table['filter_group']} for game {table['game_name']}")
+                LOGGER.warning(f"Unknown group {table['filter_group']} for game {table['game_name']}")
                 return
 
             realm = self.realms.get(int(table["filter_group"]))
@@ -117,7 +125,10 @@ class BoardImporter(contextlib.ContextDecorator):
     def store(self) -> None:
         model = Board.model(self.cursor)
 
+        LOGGER.info("Deleting all baords")
         self.cursor.execute("DELETE FROM Board")
+
+        LOGGER.info("Addings %d boards", len(self.boards))
         for board in self.boards:
             model.store(board)
 
@@ -125,9 +136,17 @@ class BoardImporter(contextlib.ContextDecorator):
 def main() -> None:
     with sqlite3.connect("games.db") as connection:
         with BoardImporter(connection) as importer:
+            LOGGER.info("Loading board from Kitteh")
             importer.import_by_user(88078650)
+
+            LOGGER.info("Saving boards")
             importer.store()
+
+        LOGGER.info("Committing")
+        connection.commit()
 
 
 if __name__ == "__main__":
+    #LOGGER.addHandler(JournalHandler())
+    LOGGER.setLevel(logging.INFO)
     main()
