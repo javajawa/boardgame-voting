@@ -5,7 +5,7 @@
 // vim: expandtab ts=4
 "use strict";
 
-import { elemGenerator } from "https://javajawa.github.io/elems.js/elems.js";
+import { elemGenerator, documentFragment } from "https://javajawa.github.io/elems.js/elems.js";
 
 const table = elemGenerator("table");
 const tbody = elemGenerator("tbody");
@@ -18,6 +18,7 @@ const th = elemGenerator("th");
 const td = elemGenerator("td");
 
 const a = elemGenerator("a");
+const span = elemGenerator("span");
 const input = elemGenerator("input");
 
 const summary = elemGenerator("summary");
@@ -104,17 +105,47 @@ Promise.all([
     const me = r[1];
 
     if (games.length) {
-        process(games, h2("Real Time"));
+        process(
+            agames,
+            me.avotes,
+            documentFragment(
+                h2("Real Time"),
+                span(
+                    "You have votes for ",
+                    me.votes.length.toString(),
+                    " (of a maximum of ",
+                    me.max_votes.toString(),
+                    " games). You can change you vote on the ",
+                    a({href: "vote"}, "votes"),
+                    " tab."
+                )
+            )
+        );
     }
     if (agames.length) {
-        process(agames, h2("Pass and Play"));
+        process(
+            agames,
+            me.avotes,
+            documentFragment(
+                h2("Pass and Play"),
+                span(
+                    "You have votes for ",
+                    me.avotes.length.toString(),
+                    " (of a maximum of ",
+                    me.max_votes.toString(),
+                    " games). You can change you vote on the ",
+                    a({href: "vote"}, "votes"),
+                    " tab."
+                )
+            )
+        );
     }
 });
 
-const process = (games, header) => new Promise((a,r) => a(games))
+const process = (games, votes, header) => new Promise((a,r) => a(games))
 .then(games =>
     games.map(game => {
-        game.voted = (me.votes.indexOf(game.game_id) !== -1);
+        game.voted = (votes.indexOf(game.game_id) !== -1);
         game.vetoed = (me.vetos.indexOf(game.game_id) !== -1);
         game.score = game.votes - 4 * game.vetos;
         return game;

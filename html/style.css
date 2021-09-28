@@ -103,17 +103,19 @@ td.vote, td.avote, td.veto
 	font-size: 0;
 }
 
-td.vote::after, td.avote::after {
+td.vote::after, td.avote::after, td.veto::after {
 	content: "✅";
 	font-size: 12pt;
 }
 
 tr.voted>td.vote::after, tr.avoted>td.avote::after {
 	content: "×";
+	font-size: 12pt;
 }
 
 tr:not(.vetoed)>td.veto::after {
 	content: "×";
+	font-size: 12pt;
 }
 
 #logout-form
