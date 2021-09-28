@@ -6,36 +6,28 @@ SPDX-License-Identifier: BSD-2-Clause
 
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<title>Board Game Voting</title>
-		<link rel="stylesheet" href="/style.css" />
-		<script type="module" src="/script.js" async></script>
-		<script type="module" src="/vote.js" async></script>
-	</head>
-	<body>
-		<nav>
-			<a href="/{realm}/">Home</a> |
-			<a href="/{realm}/vote">Vote</a> |
-			<a href="/{realm}/results">Results</a> |
-			<a href="/{realm}/boards">Boards</a> |
-			Logged in as <span class="js-user"></span>
-			<form id="logout-form" method="post" action="/{realm}/logout">
-				<input type="submit" value="logout" />
-			</form>
-		</nav>
-		<h1>Vote for Games</h1>
-		<p>
-			Vote for up to <span class="js-max-votes"></span>
-			games you would like to play.
-			Click in the vote column to vote for a game
-			(which will then be shown in green).
-		</p>
-		<p>
-			You have votes for <span class="js-votes"></span> games for real time.
-		</p>
-		<p>
-			You have votes for <span class="js-avotes"></span> games for pass and play.
-		</p>
-	</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>Board Game Voting</title>
+        <link rel="stylesheet" href="/style.css" />
+        <script type="module" src="/script.js" async></script>
+        <script type="module" src="/vote.js" async></script>
+    </head>
+    <body>
+        <nav>
+            <a href="/{realm}/">Home</a> | <a href="/{realm}/vote">Vote</a> | <a href="/{realm}/results">Results</a> |
+            <a href="/{realm}/boards">Boards</a> | Logged in as <span class="js-user"></span>
+            <form id="logout-form" method="post" action="/{realm}/logout">
+                <input type="submit" value="logout" />
+            </form>
+        </nav>
+        <h1>Vote for Games</h1>
+        <p>
+            Vote for up to <span class="js-max-votes"></span>
+            games you would like to play. Click in the vote column to vote for a game (which will then be shown in
+            green).
+        </p>
+        <p>You have votes for <span class="js-votes"></span> games for real time.</p>
+        <p>You have votes for <span class="js-avotes"></span> games for pass and play.</p>
+    </body>
 </html>

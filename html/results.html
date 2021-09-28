@@ -6,33 +6,27 @@ SPDX-License-Identifier: BSD-2-Clause
 
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<title>Board Game Voting</title>
-		<link rel="stylesheet" href="/style.css" />
-		<script type="module" src="/script.js" async></script>
-		<script type="module" src="/results.js" async></script>
-	</head>
-	<body>
-		<nav>
-			<a href="/{realm}/">Home</a> |
-			<a href="/{realm}/vote">Vote</a> |
-			<a href="/{realm}/results">Results</a> |
-			<a href="/{realm}/boards">Boards</a> |
-			Logged in as <span class="js-user"></span>
-			<form id="logout-form" method="post" action="/{realm}/logout">
-				<input type="submit" value="logout" />
-			</form>
-		</nav>
-		<h1>Review + Veto Games</h1>
-		<p>
-			Here you can see the total votes and vetoes for games, and
-			add your own vetoes.
-			Currently you have vetoed <span class="js-vetoes"></span>
-			of a maximum of <span class="js-max-vetoes"></span> games.
-			Click in the "Veto" column to veto / un-veto a game.
-			Games you have veoted are shown in red; games you have voted
-			for a shown in green, and can not be vetoed.
-		</p>
-	</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>Board Game Voting</title>
+        <link rel="stylesheet" href="/style.css" />
+        <script type="module" src="/script.js" async></script>
+        <script type="module" src="/results.js" async></script>
+    </head>
+    <body>
+        <nav>
+            <a href="/{realm}/">Home</a> | <a href="/{realm}/vote">Vote</a> | <a href="/{realm}/results">Results</a> |
+            <a href="/{realm}/boards">Boards</a> | Logged in as <span class="js-user"></span>
+            <form id="logout-form" method="post" action="/{realm}/logout">
+                <input type="submit" value="logout" />
+            </form>
+        </nav>
+        <h1>Review + Veto Games</h1>
+        <p>
+            Here you can see the total votes and vetoes for games, and add your own vetoes. Currently you have vetoed
+            <span class="js-vetoes"></span> of a maximum of <span class="js-max-vetoes"></span> games. Click in the
+            "Veto" column to veto / un-veto a game. Games you have veoted are shown in red; games you have voted for a
+            shown in green, and can not be vetoed.
+        </p>
+    </body>
 </html>

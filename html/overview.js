@@ -15,10 +15,9 @@ const td = elemGenerator("td");
 const th = elemGenerator("th");
 const a = elemGenerator("a");
 
-function fixLink(href)
-{
+function fixLink(href) {
     const match = href.match(/boardgamearena.com\/lobby\?game=([0-9]+)/);
-    
+
     if (!match) {
         return href;
     }
@@ -32,26 +31,24 @@ function fixLink(href)
     return url.toString();
 }
 
-
-fetch("overview.json").then(r => r.json()).then(games => table(
-    thead(tr(
-        th("Game"),
-        th("Link"),
-        th("Plaid"),
-        th("Brew"),
-        th("Cursed"),
-        th("LRR"),
-        th("Total")
-    )),
-    tbody(
-        games.map(game => tr(
-            td(game.game),
-            td(a({href: fixLink(game.link), target: "_blank"}, game.link)),
-            td(game.plaid.toString()),
-            td(game.brew.toString()),
-            td(game.cursed.toString()),
-            td(game.lrr.toString()),
-            td(game.total.toString())
-        ))
+fetch("overview.json")
+    .then(r => r.json())
+    .then(games =>
+        table(
+            thead(tr(th("Game"), th("Link"), th("Plaid"), th("Brew"), th("Cursed"), th("LRR"), th("Total"))),
+            tbody(
+                games.map(game =>
+                    tr(
+                        td(game.game),
+                        td(a({ href: fixLink(game.link), target: "_blank" }, game.link)),
+                        td(game.plaid.toString()),
+                        td(game.brew.toString()),
+                        td(game.cursed.toString()),
+                        td(game.lrr.toString()),
+                        td(game.total.toString())
+                    )
+                )
+            )
+        )
     )
-)).then(table => document.body.appendChild(table))
+    .then(table => document.body.appendChild(table));

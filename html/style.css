@@ -4,193 +4,180 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-body
-{
-	font-size: 17.4px;
-	line-height: 1.3;
-	font-family: Helvetica, Arial, sans-serif;
-	font-weight: 100;
-	max-width: 60rem;
-	margin: 0 auto;
-	padding: 0 2em;
-	background: #444;
-	color: #ccc;
+body {
+    font-size: 17.4px;
+    line-height: 1.3;
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 100;
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 0 2em;
+    background: #444;
+    color: #ccc;
 }
 
-a
-{
-	color: #66f;
+a {
+    color: #66f;
 }
 
-a:visited
-{
-	color: #86e;
+a:visited {
+    color: #86e;
 }
 
-@media (prefers-color-scheme: light)
-{
-	body
-	{
-		background: #ddd;
-		color: black;
-	}
+@media (prefers-color-scheme: light) {
+    body {
+        background: #ddd;
+        color: black;
+    }
 }
 
-h2
-{
-	font-size: 1.6em;
-	margin: 1.2em 0 0;
+h2 {
+    font-size: 1.6em;
+    margin: 1.2em 0 0;
 }
 
-h3
-{
-	font-size: 1.2em;
-	display: inline-block;
-	margin: 0 0 5px;
+h3 {
+    font-size: 1.2em;
+    display: inline-block;
+    margin: 0 0 5px;
 }
 
-article
-{
-	border: 1px solid black;
-	border-radius: 10px;
-	padding: 10px;
-	margin: 10px 0;
+article {
+    border: 1px solid black;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0;
 }
 
-table
-{
-	border-collapse: collapse;
-	width: 100%;
-	border: 1px solid black;
+table {
+    border-collapse: collapse;
+    width: 100%;
+    border: 1px solid black;
 }
 
-tbody>tr:nth-child(2n):not(.voted):not(.avoted):not(.vetoed)
-{
-	background: rgba(255, 255, 0, 0.1);
+tbody > tr:nth-child(2n):not(.voted):not(.avoted):not(.vetoed) {
+    background: rgba(255, 255, 0, 0.1);
 }
 
-td, th
-{
-	padding: 0 3px;
-	margin: 0 0;
-	border: 1px solid black;
-	border-width: 1px 0;
+td,
+th {
+    padding: 0 3px;
+    margin: 0 0;
+    border: 1px solid black;
+    border-width: 1px 0;
 }
 
-td.border, th.border
-{
-	border-left-width: 1px;
+td.border,
+th.border {
+    border-left-width: 1px;
 }
 
-td.number
-{
-	padding: 0 1px;
-	text-align: center;
+td.number {
+    padding: 0 1px;
+    text-align: center;
 }
 
-.voted, .avoted
-{
-	background: rgba(0, 255, 0, 0.1);
+.voted,
+.avoted {
+    background: rgba(0, 255, 0, 0.1);
 }
 
-.vetoed
-{
-	background: rgba(255, 0, 0, 0.1);
+.vetoed {
+    background: rgba(255, 0, 0, 0.1);
 }
 
-td.vote, td.avote, td.veto
-{
-	font-size: 0;
+td.vote,
+td.avote,
+td.veto {
+    font-size: 0;
 }
 
-td.vote::after, td.avote::after, td.veto::after {
-	content: "✅";
-	font-size: 12pt;
+td.vote::after,
+td.avote::after,
+td.veto::after {
+    content: "✅";
+    font-size: 12pt;
 }
 
-tr.voted>td.vote::after, tr.avoted>td.avote::after {
-	content: "×";
-	font-size: 12pt;
+tr.voted > td.vote::after,
+tr.avoted > td.avote::after {
+    content: "×";
+    font-size: 12pt;
 }
 
-tr:not(.vetoed)>td.veto::after {
-	content: "×";
-	font-size: 12pt;
+tr:not(.vetoed) > td.veto::after {
+    content: "×";
+    font-size: 12pt;
 }
 
-#logout-form
-{
-	display: inline-block;
+#logout-form {
+    display: inline-block;
 }
 
-nav
-{
-	float: right;
-	text-align: right;
+nav {
+    float: right;
+    text-align: right;
 }
 
-p, ul
-{
-	margin: 0 0 0.5em;
+p,
+ul {
+    margin: 0 0 0.5em;
 }
 
-a.btn
-{
-	border: 2px outset gray;
-	border-radius: 10px;
-	background: #c0c0c0;
-	font-size: 140%;
-	margin: 5px 0;
-	padding: 8px;
-	display: inline-block;
+a.btn {
+    border: 2px outset gray;
+    border-radius: 10px;
+    background: #c0c0c0;
+    font-size: 140%;
+    margin: 5px 0;
+    padding: 8px;
+    display: inline-block;
 }
 
-.tag, span.category
-{
-	display: inline-block;
-	padding: 1px 3px;
-	background: #bbb;
-	border: 1px solid #ccc;
-	border-radius: 6px;
-	margin: 0 5px;
-	font-size: 0.6em;
-	vertical-align: middle;
-	color: black;
+.tag,
+span.category {
+    display: inline-block;
+    padding: 1px 3px;
+    background: #bbb;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin: 0 5px;
+    font-size: 0.6em;
+    vertical-align: middle;
+    color: black;
 }
 
-.tag.admin
-{
-	background: #aca;
+.tag.admin {
+    background: #aca;
 }
 
-.tag.admin:visited
-{
-	color: black;
+.tag.admin:visited {
+    color: black;
 }
 
 .seatlist {
-	display: inline-block;
-	padding: 0 5px;
+    display: inline-block;
+    padding: 0 5px;
 }
 
 .seat {
-	display: inline-block;
-	width: 20px;
-	height: 20px;
-	border-radius: 20px;
-	border: 1px solid #aaa;
-	vertical-align: middle;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    border: 1px solid #aaa;
+    vertical-align: middle;
 }
 
 .seat.taken {
-	background: #cfc;
-	background-image: url("person.svg");
+    background: #cfc;
+    background-image: url("person.svg");
 }
 .seat.needed {
-	background: #ffc;
-	background-image: url("seat.svg");
+    background: #ffc;
+    background-image: url("seat.svg");
 }
 .seat.available {
-	background: #ccf;
-	background-image: url("seat.svg");
+    background: #ccf;
+    background-image: url("seat.svg");
 }
