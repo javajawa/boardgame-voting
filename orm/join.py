@@ -108,7 +108,7 @@ class JoinModel(Generic[Left, Right]):
             FROM [{self.table}] WHERE [{self.right.id_field}] = ?
         """
 
-        cursor.execute(sql, tuple(getattr(right, self.right.id_field)))
+        cursor.execute(sql, (getattr(right, self.right.id_field),))
 
         return [x[0] for x in cursor.fetchall()]
 

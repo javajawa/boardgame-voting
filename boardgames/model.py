@@ -101,13 +101,27 @@ class Veto(orm.Joiner[User, Game]):
     game: Game
 
 
+@orm.data_model(["admin"], ["bga_id"])
+@dataclass
+class BoardAdmin(orm.Modelled["BoardAdmin"]):
+    admin: str
+    bga_id: int
+    board_admin_id: Optional[int] = None
+
+
+@orm.join_model
+@dataclass
+class BoardAdminRealm(orm.Joiner[BoardAdmin, Realm]):
+    admin: BoardAdmin
+    realm: Realm
+
+
 @orm.data_model()
 @dataclass
 class Board(orm.Modelled["Board"]):
-    realm: Optional[Realm]
     game: Game
+    creator: BoardAdmin
     link: str
-    # mods: List[str]
     min_seats: int
     max_seats: int
     seats_taken: int
@@ -115,3 +129,10 @@ class Board(orm.Modelled["Board"]):
     description: str
 
     board_id: Optional[int] = None
+
+
+@orm.join_model
+@dataclass
+class BoardRealm(orm.Joiner[Board, Realm]):
+    board: Board
+    realm: Realm

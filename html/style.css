@@ -143,7 +143,7 @@ a.btn
 	display: inline-block;
 }
 
-span.tag, span.category
+.tag, span.category
 {
 	display: inline-block;
 	padding: 1px 3px;
@@ -153,6 +153,17 @@ span.tag, span.category
 	margin: 0 5px;
 	font-size: 0.6em;
 	vertical-align: middle;
+	color: black;
+}
+
+.tag.admin
+{
+	background: #aca;
+}
+
+.tag.admin:visited
+{
+	color: black;
 }
 
 .seatlist {

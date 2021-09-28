@@ -58,9 +58,10 @@ class Game
 
 class Board
 {
-    constructor(id, link, mods, description, created, minSeats, maxSeats, seatsTaken)
+    constructor(id, creator, link, mods, description, created, minSeats, maxSeats, seatsTaken)
     {
         this.id = id;
+        this.creator = creator;
         this.link = link;
         this.mods = mods;
         this.description = description;
@@ -194,6 +195,14 @@ function prepareBoardMessage(ble)
                     {href: board.link.toString(), target: "_blank"},
                     "View Table",
                 ),
+                a(
+                    board.creator.admin,
+                    {
+                        "class": "tag admin",
+                        href: "https://boardgamearena.com/player?id=" + board.creator.bga_id,
+                        "target": "_blank",
+                    }
+                ),
                 board.mods.map(tag => span(tag, {"class": "tag"})),
                 span(
                     {"class": "seatlist " + (board.seatsTaken < board.seatsMin ? "will-fire" : "needs-people")},
@@ -247,6 +256,7 @@ function getBoards(filter, boards, me)
 
         const board = new Board(
             data.board_id,
+            data.creator,
             data.link,
             table_modifiers,
             table_description,
@@ -264,23 +274,12 @@ function getBoards(filter, boards, me)
 
 function getGroupBoards(boards)
 {
-    return boards.filter(board => board.realm !== null);
-}
-
-function getSharedBoards(boards)
-{
-    return boards
-        .filter(board => board.realm === null)
-        .filter(board => board.max_seats !== 2)
-    ;
+    return boards.filter(board => board.max_seats !== 2);
 }
 
 function getChallengeBoards(boards)
 {
-    return boards
-        .filter(board => board.realm === null)
-        .filter(board => board.max_seats === 2)
-    ;
+    return boards.filter(board => board.max_seats === 2);
 }
 
 function createBlock(title, filter, boards, me)
@@ -304,11 +303,14 @@ Promise.all([
     const boards = r[0];
     const me = r[1];
 
+    if (boards.length === 0) {
+        document.body.appendChild(h3("There are currently no boards available"));
+    }
+
     const content = documentFragment(
         ...[
-            createBlock("This Community", getGroupBoards, boards, me),
-            createBlock("Cross-Community Boards", getSharedBoards, boards, me),
-            createBlock("Challenge Kitsune", getChallengeBoards, boards, me)
+            createBlock("Boards", getGroupBoards, boards, me),
+            createBlock("\"Challenge\" Matches (1v1s)", getChallengeBoards, boards, me)
         ].filter(x=>x)
     );
 

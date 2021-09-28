@@ -17,7 +17,7 @@ import sqlite3
 
 from boardgames.handler import FileData, Response, WSGIEnv
 from boardgames.auth_handler import AuthHandler
-from boardgames.model import AsyncVote, Board, Game, Realm, User, Vote, Veto
+from boardgames.model import AsyncVote, BoardRealm, Game, Realm, User, Vote, Veto
 
 
 FILES: Dict[str, Tuple[str, str]] = {
@@ -159,9 +159,9 @@ class BGHandler(AuthHandler):
         return self.send_json(data)
 
     def send_boards_list(self, realm: Realm) -> Response:
-        model = Board.model(self.cursor)
+        model = BoardRealm.model(self.cursor)
 
-        boards = model.search(realm_id=[realm.realm_id, None])
+        boards = model.of_right(realm)
         data = [dataclasses.asdict(board) for board in boards]
 
         return self.send_json(data)

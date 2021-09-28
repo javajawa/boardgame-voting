@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import contextlib
 import datetime
@@ -19,7 +19,7 @@ import requests
 
 from systemd.journal import JournalHandler  # type: ignore
 
-from boardgames.model import Board, Game, Realm
+from boardgames.model import Board, BoardAdmin, BoardAdminRealm, BoardRealm, Game, Realm
 
 
 LOGGER = logging.getLogger("boardgames")
@@ -28,9 +28,10 @@ LOGGER = logging.getLogger("boardgames")
 class BoardImporter(contextlib.ContextDecorator):
     realms: Dict[int, Realm]
     games: Dict[int, Game]
+    admins: List[BoardAdmin]
     connection: sqlite3.Connection
     cursor: sqlite3.Cursor
-    boards: List[Board]
+    boards: List[Tuple[Board, List[Realm]]]
 
     def __init__(self, connection: sqlite3.Connection):
         self.realms = {}
@@ -40,7 +41,8 @@ class BoardImporter(contextlib.ContextDecorator):
         self.connection = connection
         self.cursor = connection.cursor()
 
-    def __enter__(self) -> BoardImporter:
+        self.admins = BoardAdmin.model(self.cursor).all()
+
         self.games = {
             self.get_bga_game_id(game) or 0: game
             for game in Game.model(self.cursor).all()
@@ -53,12 +55,6 @@ class BoardImporter(contextlib.ContextDecorator):
             if realm.bga_group
         }
 
-        return self
-
-    def __exit__(self, *exc: Any) -> None:
-        self.connection.commit()
-        self.cursor.close()
-
     @staticmethod
     def get_bga_game_id(game: Game) -> Optional[int]:
         if not game.link.startswith("https://boardgamearena.com/lobby"):
@@ -68,11 +64,23 @@ class BoardImporter(contextlib.ContextDecorator):
 
         return int(gid)
 
-    def import_by_user(self, user_id: int) -> None:
+    def do_import(self) -> None:
+        for admin in self.admins:
+            self.import_by_user(admin)
+
+        self.store()
+
+        LOGGER.info("Committing")
+        self.connection.commit()
+        self.cursor.close()
+
+    def import_by_user(self, admin: BoardAdmin) -> None:
+        LOGGER.info("Loading boards from %s", admin.admin)
+
         request = requests.get(
             "https://en.boardgamearena.com/tablemanager/tablemanager/tableinfos.html",
             params={
-                "playerfilter": str(user_id),
+                "playerfilter": str(admin.bga_id),
                 "status": "open",
                 "dojo.preventCache": str(int(time.time())),
             },
@@ -82,71 +90,81 @@ class BoardImporter(contextlib.ContextDecorator):
         tables = data["data"]["tables"]
 
         if not tables:
-            LOGGER.info("No tables found")
+            LOGGER.info("No tables found for %s", admin.admin)
             return
 
-        for table in tables.values():
-            self.process_table(table)
+        realms = BoardAdminRealm.model(self.cursor).of_left(admin)
 
-    def process_table(self, table: Dict[str, Any]) -> None:
+        for table in tables.values():
+            self.process_table(admin, realms, table)
+
+    def process_table(
+        self, admin: BoardAdmin, default_realms: List[Realm], table: Dict[str, Any]
+    ) -> None:
         game_id = int(table["game_id"])
 
+        if int(table["admin_id"]) != admin.bga_id:
+            return
+
         if game_id not in self.games:
-            LOGGER.error(f"Unable to find game '{table['game_name']}' in database")
+            LOGGER.error("Unable to find game %s in database", table["game_name"])
             return
 
         if table["filter_group_type"] is None:
             LOGGER.warning("Missing filter group for board")
             return
 
-        realm: Optional[Realm] = None
+        realms: List[Realm] = list(default_realms)
 
         if table["filter_group_type"] == "normal":
-            if int(table["filter_group"]) not in self.realms:
-                LOGGER.warning(f"Unknown group {table['filter_group']} for game {table['game_name']}")
+            group_id = int(table["filter_group"])
+            group = self.realms.get(group_id, None)
+
+            if not group:
+                LOGGER.warning(
+                    "Unknown group %s for game %s", table["filter_group"], table["game_name"]
+                )
                 return
 
-            realm = self.realms.get(int(table["filter_group"]))
+            realms = [group]
 
+        LOGGER.debug("Adding board %s (%s)", table["id"], self.games[game_id].name)
         self.boards.append(
-            Board(
-                realm,
-                self.games[game_id],
-                "https://boardgamearena.com/table?table=" + table["id"],
-                # list(table["options"].keys()),
-                int(table["min_player"]),
-                int(table["max_player"]),
-                len(table["players"]),
-                datetime.datetime.utcfromtimestamp(int(table["scheduled"])),
-                table["presentation"],
+            (
+                Board(
+                    self.games[game_id],
+                    admin,
+                    "https://boardgamearena.com/table?table=" + table["id"],
+                    int(table["min_player"]),
+                    int(table["max_player"]),
+                    len(table["players"]),
+                    datetime.datetime.utcfromtimestamp(int(table["scheduled"])),
+                    table["presentation"],
+                ),
+                realms,
             )
         )
 
     def store(self) -> None:
         model = Board.model(self.cursor)
+        rmodel = BoardRealm.model(self.cursor)
 
-        LOGGER.info("Deleting all baords")
+        LOGGER.info("Deleting all boards")
+        self.cursor.execute("DELETE FROM BoardRealm")
         self.cursor.execute("DELETE FROM Board")
 
         LOGGER.info("Addings %d boards", len(self.boards))
-        for board in self.boards:
+        for board, realms in self.boards:
             model.store(board)
+
+            for realm in realms:
+                rmodel.store(board, realm)
 
 
 def main() -> None:
     with sqlite3.connect("games.db") as connection:
-        with BoardImporter(connection) as importer:
-            LOGGER.info("Loading board from Kitteh")
-            importer.import_by_user(88078650)
-
-            LOGGER.info("Loading board from Kitsune")
-            importer.import_by_user(89099486)
-
-            LOGGER.info("Saving boards")
-            importer.store()
-
-        LOGGER.info("Committing")
-        connection.commit()
+        importer = BoardImporter(connection)
+        importer.do_import()
 
 
 if __name__ == "__main__":
