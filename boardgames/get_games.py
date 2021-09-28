@@ -31,8 +31,6 @@ def update_bga(model: ModelWrapper[Game]) -> None:
     html = requests.get("https://boardgamearena.com/gamelist")
     soup = BeautifulSoup(html.content, "html.parser")
 
-    game_list = soup.find("select", id="gamelist_gameselect")
-
     for data in soup.find_all("div", class_="gamelist_item"):
         name = data.find("div", class_="gamename").text.strip()
 
