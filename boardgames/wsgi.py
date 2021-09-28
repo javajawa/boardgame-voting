@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, IO, Tuple
+from typing import Callable, Dict, IO, Tuple
 
 import dataclasses
 import json
@@ -45,6 +45,7 @@ class BGHandler(AuthHandler):
     realms: Dict[str, Realm] = {}
     files: Dict[str, FileData] = {}
     rfiles: Dict[str, FileData] = {}
+    rcomms: Dict[str, Callable[[BGHandler, Realm], Response]]
     _login: FileData
 
     def __init__(self) -> None:
@@ -57,9 +58,17 @@ class BGHandler(AuthHandler):
             route: FileData(path, "text/html; charset=utf-8")
             for route, path in REALM_FILES.items()
         }
+        self.rcomms = {
+            "games.json": BGHandler.send_games_list,
+            "results.json": BGHandler.send_results,
+            "boards.json": BGHandler.send_boards_list,
+        }
+
         self._login = FileData("html/login.html", "text/html; charset=utf-8")
 
-    def call(self, verb: str, path: str, environ: WSGIEnv) -> Response:
+    def call(  # pylint: disable=too-many-return-statements
+        self, verb: str, path: str, environ: WSGIEnv
+    ) -> Response:
         if verb == "GET" and path in self.files:
             return self.page_file(environ, self.files[path])
 
@@ -103,14 +112,8 @@ class BGHandler(AuthHandler):
         if path in self.rfiles:
             return self.realm_file(environ, user.realm, self.rfiles[path])
 
-        if path == "games.json":
-            return self.send_games_list(user.realm)
-
-        if path == "results.json":
-            return self.send_results(user.realm)
-
-        if path == "boards.json":
-            return self.send_boards_list(user.realm)
+        if path in self.rcomms:
+            return self.rcomms[path](self, user.realm)
 
         if path == "overview.json":
             return self.send_votes_overview()
