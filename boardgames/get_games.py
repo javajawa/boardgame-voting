@@ -7,16 +7,22 @@
 
 from typing import Any
 
+import logging
 import os
 import sqlite3
+import sys
 import yaml
 
 import requests
 
 from bs4 import BeautifulSoup  # type: ignore
+from systemd.journal import JournalHandler  # type: ignore
 
 from boardgames.model import Game
 from orm.model import ModelWrapper
+
+
+LOGGER = logging.getLogger("boardgames")
 
 
 def update_bga(model: ModelWrapper[Game]) -> None:
@@ -33,7 +39,7 @@ def update_bga(model: ModelWrapper[Game]) -> None:
         if name in existing:
             continue
 
-        print(f"New BGA Game: {name}")
+        LOGGER.warning("New BGA Game: %s", name)
         existing.append(name)
         game = fill_game_data(Game(platform="BGA", name=name), data)
         model.store(game)
@@ -80,7 +86,7 @@ def main() -> None:
             if not path.endswith(".yaml"):
                 continue
 
-            print("Importing data from ./games/" + path)
+            LOGGER.info("Importing data from ./games/%s", path)
             with open("games/" + path, "r") as yaml_stream:
                 for game_data in yaml.load_all(yaml_stream, Loader=yaml.SafeLoader):
                     game = Game(**game_data)
@@ -88,14 +94,21 @@ def main() -> None:
                     if game_model.search(platform=game.platform, name=game.name):
                         continue
 
-                    print(f"New Game: {game.name} ({game.platform})")
+                    LOGGER.warning("New Game: %s (%s)", game.name, game.platform)
                     game_model.store(game)
 
-        print("Importing data from BGA")
+        LOGGER.info("Importing data from BGA")
         update_bga(game_model)
 
         conn.commit()
 
 
 if __name__ == "__main__":
+    if sys.stdout.isatty():
+        LOGGER.addHandler(logging.StreamHandler())
+        LOGGER.setLevel(logging.DEBUG)
+    else:
+        LOGGER.addHandler(JournalHandler())
+        LOGGER.setLevel(logging.WARNING)
+
     main()

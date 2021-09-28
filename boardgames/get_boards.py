@@ -14,6 +14,7 @@ import datetime
 import logging
 import time
 import sqlite3
+import sys
 
 import requests
 
@@ -168,6 +169,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    #LOGGER.addHandler(JournalHandler())
-    LOGGER.setLevel(logging.INFO)
+    if sys.stdout.isatty():
+        LOGGER.addHandler(logging.StreamHandler())
+        LOGGER.setLevel(logging.DEBUG)
+    else:
+        LOGGER.addHandler(JournalHandler())
+        LOGGER.setLevel(logging.WARNING)
+
     main()
