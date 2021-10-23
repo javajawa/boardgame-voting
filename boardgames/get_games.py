@@ -106,7 +106,7 @@ if __name__ == "__main__":
         LOGGER.addHandler(logging.StreamHandler())
         LOGGER.setLevel(logging.DEBUG)
     else:
-        LOGGER.addHandler(JournalHandler())
+        LOGGER.addHandler(JournalHandler(SYSLOG_IDENTIFIER="bg-get-games"))
         LOGGER.setLevel(logging.WARNING)
 
     main()

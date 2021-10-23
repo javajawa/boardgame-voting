@@ -42,7 +42,7 @@ class StandAlone(gunicorn.app.base.Application):  # type: ignore
 
 if __name__ == "__main__":
     _options = {
-        "bind": "%s:%s" % ("0.0.0.0", "8888"),
+        "bind": "%s:%s" % ("127.0.1.3", "8888"),
         "workers": 1,
     }
 
