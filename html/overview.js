@@ -13,6 +13,7 @@ const tbody = elemGenerator("tbody");
 const tr = elemGenerator("tr");
 const td = elemGenerator("td");
 const th = elemGenerator("th");
+const div = elemGenerator("div");
 const a = elemGenerator("a");
 
 function fixLink(href) {
@@ -31,24 +32,91 @@ function fixLink(href) {
     return url.toString();
 }
 
-fetch("overview.json")
-    .then(r => r.json())
-    .then(games =>
-        table(
-            thead(tr(th("Game"), th("Link"), th("Plaid"), th("Brew"), th("Cursed"), th("LRR"), th("Total"))),
-            tbody(
-                games.map(game =>
-                    tr(
-                        td(game.game),
-                        td(a({ href: fixLink(game.link), target: "_blank" }, game.link)),
-                        td(game.plaid.toString()),
-                        td(game.brew.toString()),
-                        td(game.cursed.toString()),
-                        td(game.lrr.toString()),
-                        td(game.total.toString())
-                    )
-                )
+function buildTable(realms, games) {
+    const rkeys = Object.values(realms).map(realm => realm.realm);
+
+    const header = thead(
+        tr(
+            th("Game"),
+            th({ class: "border" }),
+            Object.values(realms).map(realm => th({ class: "smol numeric", click: sortTable }, div(realm.realm_name))),
+            th({ id: "_t", class: "border numeric", click: sortTable }, "Total\nVotes"),
+            th({ class: "border numeric", click: sortTable }, "My\nBoards"),
+            th({ id: "_a", class: "numeric", click: sortTable }, "Total\nBoards")
+        )
+    );
+
+    const rows = tbody(
+        Object.values(games).map(game =>
+            tr(
+                { class: game.active > 0 ? "has_boards" : "" },
+                td(a({ href: fixLink(game.link), target: "_blank" }, game.name)),
+                td({ class: "border" }),
+                rkeys.map(realm_id => td({ class: "number" }, game[realm_id]?.toString() || "")),
+                td(
+                    { class: "number border" },
+                    rkeys.reduce((total, realm_id) => total + (game[realm_id] || 0), 0).toString()
+                ),
+                td({ class: "number border" }, game.mine.toString()),
+                td({ class: "number" }, game.active.toString())
             )
         )
-    )
-    .then(table => document.body.appendChild(table));
+    );
+
+    return table(header, rows);
+}
+
+function sortTable(event) {
+    const target = event.target;
+    const body = target.closest("table").querySelector("tbody");
+    const rows = Array.from(body.children);
+    const numeric = target.classList.contains("numeric");
+    const dir = target.classList.contains("sorted");
+
+    [...target.closest("thead").querySelectorAll("th.sorted")].forEach(e => e.classList.remove("sorted"));
+    target.classList.toggle("sorted", !dir);
+
+    let idx = 0,
+        pointer = target;
+    while ((pointer = pointer.previousElementSibling)) ++idx;
+
+    rows.sort(function (l, r) {
+        let l_text = l.children[idx].textContent;
+        let r_text = r.children[idx].textContent;
+
+        let res;
+
+        if (numeric) {
+            l_text = parseFloat(l_text || -1, 10);
+            r_text = parseFloat(r_text || -1, 10);
+            res = l_text === r_text ? 0 : l_text < r_text ? 1 : -1;
+        } else {
+            res = l_text.localeCompare(r_text);
+        }
+
+        if (dir) res = -res;
+
+        return res;
+    });
+
+    for (const row of rows) {
+        row.parentElement.removeChild(row);
+    }
+
+    for (const row of rows) {
+        body.appendChild(row);
+    }
+}
+
+const admin = new URLSearchParams(window.location.search).get("admin");
+fetch(`overview.json/${admin}`)
+    .then(r => r.json())
+    .then(({ realms, games }) => buildTable(realms, games))
+    .then(table => document.body.appendChild(table))
+    .then(() => {
+        const totalColumn = document.getElementById("_t");
+        const activeColumn = document.getElementById("_a");
+        sortTable({ target: totalColumn });
+        sortTable({ target: activeColumn });
+        sortTable({ target: activeColumn });
+    });

@@ -18,10 +18,12 @@ body {
 
 a {
     color: #66f;
+    text-decoration: none;
 }
 
 a:visited {
     color: #86e;
+    text-decoration: none;
 }
 
 @media (prefers-color-scheme: light) {
@@ -55,6 +57,9 @@ table {
     border: 1px solid black;
 }
 
+tbody > tr {
+    background: rgba(64, 122, 192, 0.1);
+}
 tbody > tr:nth-child(2n):not(.voted):not(.avoted):not(.vetoed) {
     background: rgba(255, 255, 0, 0.1);
 }
@@ -65,6 +70,14 @@ th {
     margin: 0 0;
     border: 1px solid black;
     border-width: 1px 0;
+    white-space: pre-wrap;
+}
+
+th.smol {
+    font-size: 70%;
+}
+th.smol div {
+    writing-mode: vertical-lr;
 }
 
 td.border,
@@ -108,6 +121,11 @@ tr.avoted > td.avote::after {
 tr:not(.vetoed) > td.veto::after {
     content: "×";
     font-size: 12pt;
+}
+
+tr.has_boards {
+    opacity: 0.7;
+    filter: contrast(0.1);
 }
 
 #logout-form {

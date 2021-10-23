@@ -17,7 +17,16 @@ import sqlite3
 
 from boardgames.handler import FileData, Response, WSGIEnv
 from boardgames.auth_handler import AuthHandler
-from boardgames.model import AsyncVote, BoardRealm, Game, Realm, User, Vote, Veto
+from boardgames.model import (
+    AsyncVote,
+    BoardRealm,
+    BoardAdminRealm,
+    Game,
+    Realm,
+    User,
+    Vote,
+    Veto,
+)
 
 
 FILES: Dict[str, Tuple[str, str]] = {
@@ -115,8 +124,9 @@ class BGHandler(AuthHandler):
         if path in self.rcomms:
             return self.rcomms[path](self, user.realm)
 
-        if path == "overview.json":
-            return self.send_votes_overview()
+        if path.startswith("overview.json/"):
+            _, admin = path.split("/", 1)
+            return self.send_votes_overview(admin)
 
         if path == "me":
             return self.send_user_details(user)
@@ -169,37 +179,68 @@ class BGHandler(AuthHandler):
 
         return self.send_json(data)
 
-    def send_votes_overview(self) -> Response:
+    def send_votes_overview(self, admin: str) -> Response:
+        raw_realms = BoardAdminRealm.model(self.cursor).from_left(admin=admin)
+
+        if not raw_realms:
+            return Response(404, "text/plain", b"Not Found")
+
+        realms = {realm.realm_id: realm for realm in raw_realms}
+        params = ", ".join("?" * len(realms))
         self.cursor.execute(
             """
-            SELECT
-                game_id,
-                COUNT(CASE WHEN realm_id = 1 THEN 1 END),
-                COUNT(CASE WHEN realm_id = 2 THEN 1 END),
-                COUNT(CASE WHEN realm_id = 3 THEN 1 END),
-                COUNT(CASE WHEN realm_id = 10 THEN 1 END),
-                COUNT(0)
-            FROM Game
-            NATURAL JOIN AsyncVote
-            NATURAL JOIN User
-            WHERE realm_id IN (1,2,3,10)
-            GROUP BY game_id
-            ORDER BY COUNT(0) DESC
+            SELECT game_id, realm_id, COUNT(0)
+            FROM Game NATURAL JOIN AsyncVote NATURAL JOIN User
+            WHERE realm_id IN (
             """
+            + params
+            + """
+            )
+            GROUP BY game_id, realm_id
+            """,
+            tuple(realms.keys()),
         )
 
         rows = self.cursor.fetchall()
 
-        games = Game.model(self.cursor).get_many(*[r[0] for r in rows])
+        games = Game.model(self.cursor).get_many(*set(r[0] for r in rows))
 
-        keys = ["game", "link", "plaid", "brew", "cursed", "lrr", "total"]
-        data = []
+        self.cursor.execute(
+            (
+                "SELECT game_id, COUNT(DISTINCT board_id) "
+                "FROM Board NATURAL JOIN BoardRealm WHERE realm_id IN ("
+                f"{params}"
+                ") GROUP BY game_id"
+            ),
+            tuple(realms.keys()),
+        )
+        boards = dict(self.cursor.fetchall())
 
-        for row in rows:
-            game = games[row[0]]
-            data.append(dict(zip(keys, [game.name, game.link, *row[1:]])))
+        self.cursor.execute(
+            (
+                "SELECT game_id, COUNT(DISTINCT board_id) FROM "
+                "Board NATURAL JOIN BoardAdmin WHERE admin = ? GROUP BY game_id"
+            ),
+            (admin,),
+        )
+        my_boards = dict(self.cursor.fetchall())
 
-        return self.send_json(data)
+        data = {}
+
+        for game_id, realm_id, votes in rows:
+            if game_id not in data:
+                data[game_id] = {
+                    "name": games[game_id].name,
+                    "link": games[game_id].link,
+                    "active": boards.get(game_id, 0),
+                    "mine": my_boards.get(game_id, 0),
+                }
+
+            data[game_id][realms[realm_id].realm] = votes
+
+        return self.send_json(
+            {"realms": [realm.__dict__ for realm in realms.values()], "games": data}
+        )
 
     def send_user_details(self, user: User) -> Response:
         data = {
