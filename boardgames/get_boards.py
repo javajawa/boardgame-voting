@@ -13,6 +13,7 @@ import contextlib
 import datetime
 import logging
 import time
+import re
 import sqlite3
 import sys
 
@@ -133,14 +134,17 @@ class BoardImporter(contextlib.ContextDecorator):
 
             realms = [group]
 
-        LOGGER.debug("Adding board %d (%s)", table["id"], self.games[game_id].name)
+        LOGGER.debug("Adding board %s (%s)", table["id"], self.games[game_id].name)
+
+        min_players = self.get_min_players(table)
+
         self.boards.append(
             (
                 Board(
                     self.games[game_id],
                     admin,
                     "https://boardgamearena.com/table?table=" + table["id"],
-                    int(table["min_player"]),
+                    min_players,
                     int(table["max_player"]),
                     len(table["players"]),
                     datetime.datetime.utcfromtimestamp(int(table["scheduled"])),
@@ -149,6 +153,20 @@ class BoardImporter(contextlib.ContextDecorator):
                 realms,
             )
         )
+
+    def get_min_players(self, table: Dict[str, Any]) -> int:
+        players = self.games[int(table["game_id"])].min_players
+
+        pres = table.get("presentation", "")
+        match = re.search(r"\{([0-9])\}", pres)
+
+        if not match or not match.group(1):
+            return players
+
+        table["presentation"] = pres.replace(match.group(0), "")
+        players = max(players, int(match.group(1)))
+
+        return players
 
     def store(self) -> None:
         model = Board.model(self.cursor)
