@@ -85,7 +85,7 @@ def main() -> None:
                 continue
 
             LOGGER.info("Importing data from ./games/%s", path)
-            with open("games/" + path, "r") as yaml_stream:
+            with open("games/" + path, "rt", encoding="utf-8") as yaml_stream:
                 for game_data in yaml.load_all(yaml_stream, Loader=yaml.SafeLoader):
                     game = Game(**game_data)
 

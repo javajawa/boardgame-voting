@@ -82,10 +82,10 @@ class Modelled(Generic[Table]):
 
 
 def _add_uniques(model: Model[Table], *uniques: List[str]) -> None:
-    model.uniques = list()
+    model.uniques = []
 
     for _fields in uniques:
-        if not all([x in model.table_fields for x in _fields]):
+        if not all(x in model.table_fields for x in _fields):
             raise Exception(f"Unique key not possible {_fields}")
 
         model.uniques.append(_fields)
@@ -273,7 +273,7 @@ class Model(Generic[Table]):
                 raise AttributeError(f"{self.record.__name__} has no attribute {key}")
 
         args = list(kwargs.keys())
-        clauses = list()
+        clauses = []
 
         for arg in args:
             clauses.append(self.where_clause(arg, kwargs))

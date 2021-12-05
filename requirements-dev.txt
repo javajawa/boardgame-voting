@@ -9,3 +9,6 @@ flake8
 mypy
 pylint
 reuse
+
+types-requests
+types-pyyaml
