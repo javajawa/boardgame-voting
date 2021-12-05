@@ -189,7 +189,7 @@ class BGHandler(AuthHandler):
         params = ", ".join("?" * len(realms))
         self.cursor.execute(
             """
-            SELECT game_id, realm_id, COUNT(0)
+            SELECT game_id, realm_id, COUNT(0), GROUP_CONCAT(DISTINCT username)
             FROM Game NATURAL JOIN AsyncVote NATURAL JOIN User
             WHERE realm_id IN (
             """
@@ -227,7 +227,7 @@ class BGHandler(AuthHandler):
 
         data = {}
 
-        for game_id, realm_id, votes in rows:
+        for game_id, realm_id, votes, users in rows:
             if game_id not in data:
                 data[game_id] = {
                     "name": games[game_id].name,
@@ -236,7 +236,10 @@ class BGHandler(AuthHandler):
                     "mine": my_boards.get(game_id, 0),
                 }
 
-            data[game_id][realms[realm_id].realm] = votes
+            data[game_id][realms[realm_id].realm] = {
+                "votes": votes,
+                "users": users,
+            }
 
         return self.send_json(
             {"realms": [realm.__dict__ for realm in realms.values()], "games": data}

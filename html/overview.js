@@ -52,10 +52,10 @@ function buildTable(realms, games) {
                 { class: game.active > 0 ? "has_boards" : "" },
                 td(a({ href: fixLink(game.link), target: "_blank" }, game.name)),
                 td({ class: "border" }),
-                rkeys.map(realm_id => td({ class: "number" }, game[realm_id]?.toString() || "")),
+                rkeys.map(realm_id => td({ class: "number", title: game[realm_id]?.users?.replace(",", "\n") || "" }, game[realm_id]?.votes?.toString() || "")),
                 td(
                     { class: "number border" },
-                    rkeys.reduce((total, realm_id) => total + (game[realm_id] || 0), 0).toString()
+                    rkeys.reduce((total, realm_id) => total + (game[realm_id]?.votes || 0), 0).toString()
                 ),
                 td({ class: "number border" }, game.mine.toString()),
                 td({ class: "number" }, game.active.toString())

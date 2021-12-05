@@ -67,7 +67,8 @@ class BoardImporter(contextlib.ContextDecorator):
 
     def do_import(self) -> None:
         for admin in self.admins:
-            self.import_by_user(admin)
+            if admin.bga_id:
+                self.import_by_user(admin)
 
         self.store()
 
@@ -112,7 +113,7 @@ class BoardImporter(contextlib.ContextDecorator):
             return
 
         if table["filter_group_type"] is None:
-            LOGGER.warning("Missing filter group for board")
+            LOGGER.info("Missing filter group for board %s", game_id)
             return
 
         realms: List[Realm] = list(default_realms)
@@ -123,13 +124,16 @@ class BoardImporter(contextlib.ContextDecorator):
 
             if not group:
                 LOGGER.warning(
-                    "Unknown group %s for game %s", table["filter_group"], table["game_name"]
+                    "Unknown group %s for game %s %d",
+                    table["filter_group"],
+                    table["game_name"],
+                    game_id,
                 )
                 return
 
             realms = [group]
 
-        LOGGER.debug("Adding board %s (%s)", table["id"], self.games[game_id].name)
+        LOGGER.debug("Adding board %d (%s)", table["id"], self.games[game_id].name)
         self.boards.append(
             (
                 Board(
