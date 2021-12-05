@@ -17,12 +17,12 @@ body {
 }
 
 a {
-    color: #66f;
+    color: #28f;
     text-decoration: none;
 }
 
 a:visited {
-    color: #86e;
+    color: #87d;
     text-decoration: none;
 }
 
@@ -30,6 +30,12 @@ a:visited {
     body {
         background: #ddd;
         color: black;
+    }
+    a {
+        color: #66f;
+    }
+    a:visited {
+        color: #86e;
     }
 }
 

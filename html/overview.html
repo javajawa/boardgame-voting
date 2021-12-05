@@ -22,6 +22,14 @@ SPDX-License-Identifier: BSD-2-Clause
             </form>
         </nav>
         <h1>Votes Overview</h1>
-        <p>Please wait, boards are loading.</p>
+        <p>Please wait, results are loading.</p>
+        <p>
+            When you click on a link, a board will be created, and you will be presented with some code-y text. Drag
+            <a
+                href="javascript:window.location=(()=>{x = new URL('https://boardgamearena.com/table'); x.searchParams.set('table', JSON.parse(document.body.textContent).data.table);return x;})();"
+                >this link to your bookmarks bar</a
+            >
+            and click it when you are on that code-y looking tab to be taken to the newly created board.
+        </p>
     </body>
 </html>
