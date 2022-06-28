@@ -95,6 +95,22 @@ class BoardList {
 
         this.games[game.id].add(board);
     }
+
+    sorted() {
+        const list = Object.values(this.games);
+
+        list.sort((a, b) => {
+            if (a.game.vote != b.game.vote) {
+                return b.game.vote - a.game.vote;
+            }
+            if (a.game.veto != b.game.veto) {
+                return a.game.veto - b.game.veto;
+            }
+            return a.game.name.localeCompare(b.game.name);
+        });
+
+        return list;
+    }
 }
 
 class BoardListElement {
@@ -350,14 +366,14 @@ function prepareBoardMessage(ble) {
 
     return article(
         { class: (game.vote ? "voted" : "") + (game.veto ? "vetoed" : "") },
-        img({ src: game.image, style: "max-width: 200px; max-height: 100px; float: left; margin: 0 5px 10px 0;" }),
+        img({ "class": "boxart", "src": game.image }),
         header(
             h3(game.name),
             game.tags.map(tag => span(tag, { class: "category" }))
         ),
-        main(p(game.description)),
+        main(p({"class": "description"}, game.description)),
         ul(
-            { style: "clear: left;" },
+            { "class": "table-list" },
             ble.boards.map(board =>
                 main(
                     li(
@@ -439,7 +455,7 @@ function getBoards(filter, boards, me) {
         list.add(game, board);
     });
 
-    return Object.values(list.games);
+    return list.sorted();
 }
 
 function getGroupBoards(boards) {
@@ -460,6 +476,7 @@ function createBlock(title, filter, boards, me) {
     return section(header(h2(title)), main(list.map(prepareBoardMessage)));
 }
 
+
 Promise.all([fetch("boards.json").then(r => r.json()), fetch("me").then(r => r.json())]).then(r => {
     const boards = r[0];
     const me = r[1];
@@ -470,10 +487,17 @@ Promise.all([fetch("boards.json").then(r => r.json()), fetch("me").then(r => r.j
 
     const content = documentFragment(
         ...[
-            createBlock("Boards", getGroupBoards, boards, me),
-            createBlock('"Challenge" Matches (1v1s)', getChallengeBoards, boards, me),
+            createBlock("Boards", x=>x, boards, me),
         ].filter(x => x)
     );
 
+    const compact = window.localStorage.getItem("compact");
+
+    if (compact == "true") {
+        document.body.classList.add("compact");
+    }
+
     document.body.appendChild(content);
 });
+
+window.compactToggle = e => window.localStorage.setItem("compact", document.body.classList.toggle('compact'));

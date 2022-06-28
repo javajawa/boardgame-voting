@@ -94,7 +94,7 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
     if (games.length) {
         process(
             agames,
-            me.avotes,
+            me.votes,
             documentFragment(
                 h2("Real Time"),
                 span(

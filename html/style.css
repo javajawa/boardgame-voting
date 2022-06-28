@@ -205,3 +205,25 @@ span.category {
     background: #ccf;
     background-image: url("seat.svg");
 }
+
+.tablelist {
+	clear: left;
+}
+
+.boxart {
+	max-width: 200px;
+	max-height: 100px;
+	float: left;
+	margin: 0 5px 10px 0;
+}
+
+body.compact .boxart {
+	max-height: 50px;
+}
+body.compact .description {
+	display: none;
+}
+body.compact .tablelist {
+	clear: none;
+}
+
