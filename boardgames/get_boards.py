@@ -67,9 +67,19 @@ class BoardImporter(contextlib.ContextDecorator):
         return int(gid)
 
     def do_import(self) -> None:
-        for admin in self.admins:
-            if admin.bga_id:
-                self.import_by_user(admin)
+        with requests.Session() as session:
+            for line in session.get("https://boardgamearena.com/").text.split("\n"):
+                if "requestToken: " not in line:
+                    continue
+
+                _, token = line.split("'", 1)
+                token = token.strip("',")
+
+                session.headers.update({"x-request-token": token})
+
+            for admin in self.admins:
+                if admin.bga_id:
+                    self.import_by_user(session, admin)
 
         self.store()
 
@@ -77,10 +87,10 @@ class BoardImporter(contextlib.ContextDecorator):
         self.connection.commit()
         self.cursor.close()
 
-    def import_by_user(self, admin: BoardAdmin) -> None:
+    def import_by_user(self, session: requests.Session, admin: BoardAdmin) -> None:
         LOGGER.info("Loading boards from %s", admin.admin)
 
-        request = requests.get(
+        request = session.get(
             "https://en.boardgamearena.com/tablemanager/tablemanager/tableinfos.html",
             params={
                 "playerfilter": str(admin.bga_id),
