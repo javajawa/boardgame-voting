@@ -26,7 +26,11 @@ SPDX-License-Identifier: BSD-2-Clause
                 Password:
                 <input id="password" type="password" name="password" />
             </label>
+            <input type="hidden" id="redirect" name="redirect" value="/{realm}/">
             <input type="submit" value="Log In" />
         </form>
+        <script type="text/javascript">
+            document.getElementById('redirect').value = window.location.pathname;
+        </script>
     </body>
 </html>

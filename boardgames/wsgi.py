@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict, IO, Tuple
+from typing import Callable, Dict, IO, Optional, Tuple
 
 import dataclasses
 import json
@@ -41,20 +41,20 @@ FILES: Dict[str, Tuple[str, str]] = {
     "/seat.svg": ("html/seat.svg", "image/svg+xml"),
 }
 
-REALM_FILES: Dict[str, str] = {
-    "": "html/welcome.html",
-    "vote": "html/vote.html",
-    "results": "html/results.html",
-    "boards": "html/boards.html",
-    "overview": "html/overview.html",
+REALM_FILES: Dict[str, Tuple[str, bool]] = {
+    "": ("html/welcome.html", True),
+    "vote": ("html/vote.html", True),
+    "results": ("html/results.html", True),
+    "boards": ("html/boards.html", False),
+    "overview": ("html/overview.html", False),
 }
 
 
 class BGHandler(AuthHandler):
     realms: Dict[str, Realm] = {}
     files: Dict[str, FileData] = {}
-    rfiles: Dict[str, FileData] = {}
-    rcomms: Dict[str, Callable[[BGHandler, Realm], Response]]
+    realm_files: Dict[str, Tuple[bool, FileData]] = {}
+    realm_data: Dict[str, Tuple[bool, Callable[[BGHandler, Realm], Response]]]
     _login: FileData
 
     def __init__(self) -> None:
@@ -63,14 +63,14 @@ class BGHandler(AuthHandler):
 
         self.realms = {x.realm: x for x in Realm.model(self.cursor).all()}
         self.files = {route: FileData(path, mime) for route, (path, mime) in FILES.items()}
-        self.rfiles = {
-            route: FileData(path, "text/html; charset=utf-8")
+        self.realm_files = {
+            route: (path[1], FileData(path[0], "text/html; charset=utf-8"))
             for route, path in REALM_FILES.items()
         }
-        self.rcomms = {
-            "games.json": BGHandler.send_games_list,
-            "results.json": BGHandler.send_results,
-            "boards.json": BGHandler.send_boards_list,
+        self.realm_data = {
+            "games.json": (True, BGHandler.send_games_list),
+            "results.json": (True, BGHandler.send_results),
+            "boards.json": (False, BGHandler.send_boards_list),
         }
 
         self._login = FileData("html/login.html", "text/html; charset=utf-8")
@@ -93,15 +93,12 @@ class BGHandler(AuthHandler):
 
         user = self.auth(realm, environ.get("HTTP_COOKIE", ""))
 
-        if not user:
-            return self.auth_challenge(realm)
-
         if verb == "GET":
-            return self.get_request(environ, user, path)
+            return self.get_request(environ, realm, user, path)
 
         if verb == "PUT":
             data: IO[bytes] = environ.get("wsgi.input")  # type: ignore
-            return self.put_request(user, path, data)
+            return self.put_request(realm, user, path, data)
 
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
@@ -117,23 +114,36 @@ class BGHandler(AuthHandler):
 
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
-    def get_request(self, environ: WSGIEnv, user: User, path: str) -> Response:
-        if path in self.rfiles:
-            return self.realm_file(environ, user.realm, self.rfiles[path])
+    def get_request(
+        self, environ: WSGIEnv, realm: Realm, user: Optional[User], path: str
+    ) -> Response:
+        if path in self.realm_files:
+            authed, file = self.realm_files[path]
+            if authed and not user:
+                return self.auth_challenge(realm)
+            return self.realm_file(environ, realm, file)
 
-        if path in self.rcomms:
-            return self.rcomms[path](self, user.realm)
+        if path in self.realm_data:
+            authed, call = self.realm_data[path]
+            if authed and not user:
+                return self.auth_challenge(realm)
+            return call(self, realm)
 
         if path.startswith("overview.json/"):
             _, admin = path.split("/", 1)
             return self.send_votes_overview(admin)
 
         if path == "me":
-            return self.send_user_details(user)
+            return self.send_user_details(realm, user)
 
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
-    def put_request(self, user: User, path: str, data: IO[bytes]) -> Response:
+    def put_request(
+        self, realm: Realm, user: Optional[User], path: str, data: IO[bytes]
+    ) -> Response:
+        if not user:
+            return self.auth_challenge(realm)
+
         mapping = {"vote": Vote.model, "avote": AsyncVote.model, "veto": Veto.model}
 
         if path not in mapping:
@@ -245,14 +255,28 @@ class BGHandler(AuthHandler):
             {"realms": [realm.__dict__ for realm in realms.values()], "games": data}
         )
 
-    def send_user_details(self, user: User) -> Response:
+    def send_user_details(self, realm: Realm, user: Optional[User]) -> Response:
+        if not user:
+            return self.send_json(
+                {
+                    "username": None,
+                    "role": None,
+                    "votes": [],
+                    "avotes": [],
+                    "vetos": [],
+                    "max_votes": 999,
+                    "max_vetos": 3,
+                    "realm": dataclasses.asdict(realm),
+                }
+            )
+
         data = {
             "username": user.username,
             "role": user.role,
             "votes": Vote.model(self.cursor).ids_for_left(user),
             "avotes": AsyncVote.model(self.cursor).ids_for_left(user),
             "vetos": Veto.model(self.cursor).ids_for_left(user),
-            "max_votes": 8,
+            "max_votes": 999,
             "max_vetos": 3,
             "realm": dataclasses.asdict(user.realm),
         }
@@ -313,7 +337,7 @@ class BGHandler(AuthHandler):
 
         vetos: Dict[int, int] = dict(self.cursor.fetchall())
 
-        return (votes, vetos)
+        return votes, vetos
 
     def get_passnplay_votes(self, realm: Realm) -> Tuple[Dict[int, int], Dict[int, int]]:
         self.cursor.execute(
@@ -342,4 +366,4 @@ class BGHandler(AuthHandler):
 
         vetos: Dict[int, int] = dict(self.cursor.fetchall())
 
-        return (votes, vetos)
+        return votes, vetos

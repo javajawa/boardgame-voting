@@ -11,7 +11,7 @@ function updateField(selector, value) {
 fetch("me")
     .then(r => r.json())
     .then(me => {
-        updateField(".js-user", me.username);
+        updateField(".js-user", me.username || "Not Logged In");
 
         updateField(".js-votes", me.votes.length);
         updateField(".js-max-votes", me.max_votes);

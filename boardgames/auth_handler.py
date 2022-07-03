@@ -62,6 +62,7 @@ class AuthHandler(Handler):
 
         username = data["username"].file.read() if "username" in data else ""
         password = data["password"].file.read() if "password" in data else ""
+        redirect = data["redirect"].file.read() if "redirect" in data else f"/{realm.realm}/"
 
         if not username or not password:
             return self.auth_challenge(realm)
@@ -93,7 +94,7 @@ class AuthHandler(Handler):
             headers=[
                 ("Set-Cookie", f"user-{realm.realm}={username}; path=/{realm.realm}"),
                 ("Set-Cookie", f"auth-{realm.realm}={token}; path=/{realm.realm}"),
-                ("Location", f"/{realm.realm}/"),
+                ("Location", redirect),
             ],
         )
 
