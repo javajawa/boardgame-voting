@@ -44,13 +44,9 @@ class BoardImporter(contextlib.ContextDecorator):
         self.cursor = connection.cursor()
 
         self.admins = BoardAdmin.model(self.cursor).all()
-
         self.games = {
-            self.get_bga_game_id(game) or 0: game
-            for game in Game.model(self.cursor).all()
-            if self.get_bga_game_id(game)
+            game.bga_id: game for game in Game.model(self.cursor).all() if game.bga_id
         }
-
         self.realms = {
             realm.bga_group: realm
             for realm in Realm.model(self.cursor).all()
@@ -159,6 +155,7 @@ class BoardImporter(contextlib.ContextDecorator):
                     len(table["players"]),
                     datetime.datetime.utcfromtimestamp(int(table["scheduled"])),
                     table["presentation"],
+                    {int(k): int(v) for k, v in table["options"].items()},
                 ),
                 realms,
             )
@@ -168,7 +165,7 @@ class BoardImporter(contextlib.ContextDecorator):
         players = self.games[int(table["game_id"])].min_players
 
         pres = table.get("presentation", "")
-        match = re.search(r"\{([0-9])\}", pres)
+        match = re.search(r"{([0-9])}", pres)
 
         if not match or not match.group(1):
             return players

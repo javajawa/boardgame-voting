@@ -119,15 +119,15 @@ class BGHandler(AuthHandler):
     ) -> Response:
         if path in self.realm_files:
             authed, file = self.realm_files[path]
-            if authed and not user:
-                return self.auth_challenge(realm)
-            return self.realm_file(environ, realm, file)
+            return (
+                self.auth_challenge(realm)
+                if authed and not user
+                else self.realm_file(environ, realm, file)
+            )
 
         if path in self.realm_data:
             authed, call = self.realm_data[path]
-            if authed and not user:
-                return self.auth_challenge(realm)
-            return call(self, realm)
+            return self.auth_challenge(realm) if authed and not user else call(self, realm)
 
         if path.startswith("overview.json/"):
             _, admin = path.split("/", 1)
@@ -197,17 +197,15 @@ class BGHandler(AuthHandler):
 
         realms = {realm.realm_id: realm for realm in raw_realms}
         params = ", ".join("?" * len(realms))
+
         self.cursor.execute(
-            """
-            SELECT game_id, realm_id, COUNT(0), GROUP_CONCAT(DISTINCT username)
-            FROM Game NATURAL JOIN AsyncVote NATURAL JOIN User
-            WHERE realm_id IN (
-            """
-            + params
-            + """
-            )
-            GROUP BY game_id, realm_id
-            """,
+            (
+                "SELECT game_id, realm_id, COUNT(0), GROUP_CONCAT(DISTINCT username) "
+                "FROM Game NATURAL JOIN AsyncVote NATURAL JOIN User "
+                f"WHERE realm_id IN ({params}) "
+                "AND Game.platform = 'BGA' "
+                "GROUP BY game_id, realm_id"
+            ),
             tuple(realms.keys()),
         )
 
@@ -218,9 +216,9 @@ class BGHandler(AuthHandler):
         self.cursor.execute(
             (
                 "SELECT game_id, COUNT(DISTINCT board_id) "
-                "FROM Board NATURAL JOIN BoardRealm WHERE realm_id IN ("
-                f"{params}"
-                ") GROUP BY game_id"
+                "FROM Board NATURAL JOIN BoardRealm "
+                f"WHERE realm_id IN ({params}) "
+                "GROUP BY game_id"
             ),
             tuple(realms.keys()),
         )

@@ -413,6 +413,8 @@ function getBoards(filter, boards, me) {
     const list = new BoardList();
 
     filter(boards).forEach(data => {
+        const game_options = new Map(Object.entries(data.game.options).map(([k, v]) => [parseInt(k, 10), JSON.parse(v)]));
+
         const game = new Game(
             data.game.game_id,
             data.game.name,
@@ -439,6 +441,29 @@ function getBoards(filter, boards, me) {
                 .filter(x => x);
             table_description = table_description.replace(/\[[^\]]+\]/, "");
         }
+
+        Object.entries(data.options).forEach(([id, value]) => {
+        	id = parseInt(id, 10);
+        	value = parseInt(value, 10);
+
+            if (!game_options.has(id)) {
+                return;
+            }
+
+            const option = game_options.get(id);
+
+            if (!Object.prototype.hasOwnProperty.call(option.values, value)) {
+                return;
+            }
+
+            const opt_value = option.values[value];
+
+            if (!Object.prototype.hasOwnProperty.call(opt_value, "tmdisplay")) {
+                return;
+            }
+
+            table_modifiers.push(opt_value["tmdisplay"])
+        });
 
         const board = new Board(
             data.board_id,

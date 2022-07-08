@@ -23,11 +23,8 @@ function fixLink(href) {
         return href;
     }
 
-    const url = new URL("https://boardgamearena.com/table/table/createnew.html");
+    const url = new URL("https://boardgamearena.com/lobby");
     url.searchParams.set("game", match[1]);
-    url.searchParams.set("gamemode", "async");
-    url.searchParams.set("forceManual", "true");
-    url.searchParams.set("is_meeting", "false");
 
     return url.toString();
 }

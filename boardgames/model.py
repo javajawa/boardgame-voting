@@ -9,7 +9,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
+import dataclasses
+from typing import Dict, Optional
 
 from dataclasses import dataclass, field
 import datetime
@@ -17,9 +18,9 @@ import datetime
 import orm
 
 
-@orm.data_model(["realm"])
+@orm.unique("realm")
 @dataclass
-class Realm(orm.Modelled["Realm"]):
+class Realm(orm.Table["Realm"]):
     realm_id: int
     realm: str
     realm_name: str
@@ -28,9 +29,9 @@ class Realm(orm.Modelled["Realm"]):
     passnplay: bool = True
 
 
-@orm.data_model(["realm_id", "username"])
+@orm.unique("realm_id", "username")
 @dataclass
-class User(orm.Modelled["User"]):
+class User(orm.Table["User"]):
     username: str
     password: bytes
     realm: Realm
@@ -38,11 +39,22 @@ class User(orm.Modelled["User"]):
     user_id: Optional[int] = None
 
 
-@orm.data_model(["platform", "name"])
+@orm.unique("game_id", "option_id")
 @dataclass
-class Game(orm.Modelled["Game"]):
+class GameOptions(orm.Table["GameOptions"]):
+    game_id: int
+    option_id: int
+    json: str
+    game_options_id: Optional[int] = None
+
+
+@orm.unique("platform", "name")
+@orm.subtable("options", GameOptions, "json", "option_id")
+@dataclass
+class Game(orm.Table["Game"]):
     platform: str
     name: str
+
     description: str = ""
     link: str = ""
     image: str = ""
@@ -56,69 +68,77 @@ class Game(orm.Modelled["Game"]):
 
     added: datetime.datetime = field(default_factory=datetime.datetime.now)
 
+    options: Dict[int, str] = dataclasses.field(default_factory=dict)
+
+    bga_id: Optional[int] = None
+    bgg_id: Optional[int] = None
     game_id: Optional[int] = None
 
 
-@orm.data_model(["tag"])
 @dataclass
-class Tag(orm.Modelled["Tag"]):
+class Tag(orm.Table["Tag"]):
     tag: str
+    category: str
+    bga_id: Optional[int] = None
     tag_id: Optional[int] = None
 
 
-@orm.join_model
 @dataclass
-class GameTags(orm.Joiner[Game, Tag]):
+class GameTags(orm.JoinTable[Game, Tag]):
     game: Game
     tag: Tag
 
 
-@orm.join_model
 @dataclass
-class RealmBlacklist(orm.Joiner[Realm, Game]):
+class RealmBlacklist(orm.JoinTable[Realm, Game]):
     realm: Realm
     game: Game
 
 
-@orm.join_model
 @dataclass
-class Vote(orm.Joiner[User, Game]):
+class Vote(orm.JoinTable[User, Game]):
     user: User
     game: Game
 
 
-@orm.join_model
 @dataclass
-class AsyncVote(orm.Joiner[User, Game]):
+class AsyncVote(orm.JoinTable[User, Game]):
     user: User
     game: Game
 
 
-@orm.join_model
 @dataclass
-class Veto(orm.Joiner[User, Game]):
+class Veto(orm.JoinTable[User, Game]):
     user: User
     game: Game
 
 
-@orm.data_model(["admin"], ["bga_id"])
+@orm.unique("admin", "bga_id")
 @dataclass
-class BoardAdmin(orm.Modelled["BoardAdmin"]):
+class BoardAdmin(orm.Table["BoardAdmin"]):
     admin: str
     bga_id: int
     board_admin_id: Optional[int] = None
 
 
-@orm.join_model
 @dataclass
-class BoardAdminRealm(orm.Joiner[BoardAdmin, Realm]):
+class BoardAdminRealm(orm.JoinTable[BoardAdmin, Realm]):
     admin: BoardAdmin
     realm: Realm
 
 
-@orm.data_model()
+@orm.unique("board_id", "option_id")
 @dataclass
-class Board(orm.Modelled["Board"]):
+class BoardOptions(orm.Table["BoardOptions"]):
+    board_id: int
+    option_id: int
+    option_value: int
+    board_options_id: Optional[int] = None
+
+
+@orm.subtable("options", BoardOptions, "option_value", "option_id")
+@dataclass
+class Board(orm.Table["Board"]):
     game: Game
     creator: BoardAdmin
     link: str
@@ -128,11 +148,11 @@ class Board(orm.Modelled["Board"]):
     created: datetime.datetime
     description: str
 
+    options: Dict[int, int] = dataclasses.field(default_factory=dict)
     board_id: Optional[int] = None
 
 
-@orm.join_model
 @dataclass
-class BoardRealm(orm.Joiner[Board, Realm]):
+class BoardRealm(orm.JoinTable[Board, Realm]):
     board: Board
     realm: Realm
