@@ -11,9 +11,12 @@ from __future__ import annotations
 
 from typing import Callable, Dict, IO, Optional, Tuple
 
+import cgi
 import dataclasses
 import json
 import sqlite3
+
+import requests
 
 from boardgames.handler import FileData, Response, WSGIEnv
 from boardgames.auth_handler import AuthHandler
@@ -111,6 +114,9 @@ class BGHandler(AuthHandler):
 
         if path == "logout":
             return self.logout(realm)
+
+        if path == "create":
+            return self.create_board(environ)
 
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
@@ -239,6 +245,7 @@ class BGHandler(AuthHandler):
             if game_id not in data:
                 data[game_id] = {
                     "name": games[game_id].name,
+                    "bga_id": games[game_id].bga_id,
                     "link": games[game_id].link,
                     "active": boards.get(game_id, 0),
                     "mine": my_boards.get(game_id, 0),
@@ -365,3 +372,32 @@ class BGHandler(AuthHandler):
         vetos: Dict[int, int] = dict(self.cursor.fetchall())
 
         return votes, vetos
+
+    def create_board(self, environ: WSGIEnv) -> Response:
+        data = cgi.FieldStorage(environ=environ, fp=environ["wsgi.input"])  # type: ignore
+
+        config_json = data["config"].value if "config" in data else ""
+        game_str = data["game"].value if "game" in data else ""
+
+        if not config_json or not game_str:
+            return self.send_json({"error": "Missing post fields", "id": None})
+
+        config = json.loads(config_json)
+
+        response = requests.get(
+            "https://boardgamearena.com/table/table/createnew.html",
+            params={
+                "game": game_str,
+                "gamemode": "async",
+                "forceManual": "true",
+                "is_meeting": "false",
+            },
+            cookies=config,
+            headers={"x-request-token": config["TournoiEnLigneid"]},
+        )
+
+        result = response.json()
+
+        return self.send_json(
+            {"error": result.get("error"), "id": result.get("data", {}).get("table")}
+        )

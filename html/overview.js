@@ -16,17 +16,58 @@ const th = elemGenerator("th");
 const div = elemGenerator("div");
 const a = elemGenerator("a");
 
-function fixLink(href) {
-    const match = href.match(/boardgamearena.com\/lobby\?game=([0-9]+)/);
-
-    if (!match) {
-        return href;
-    }
-
+function fixLink(bga_id) {
     const url = new URL("https://boardgamearena.com/lobby");
-    url.searchParams.set("game", match[1]);
+    url.searchParams.set("game", bga_id);
 
     return url.toString();
+}
+
+function autoBoard(e) {
+    const tokens = document.getElementById("tokens").value;
+
+    if (!tokens) {
+        return true;
+    }
+
+    e.preventDefault();
+
+    const data = new URLSearchParams();
+    data.append("config", tokens);
+    data.append("game", e.target.getAttribute("game_id"));
+
+    fetch("/cursed-chat/create", {
+        method: "post",
+        body: data,
+    }).then(r => r.json()).then(r => {
+        if (r.error) {
+            window.alert(r.error);
+            return false;
+        }
+
+        const a = document.createElement("a");
+        a.href = "https://boardgamearena.com/table?table=" + r.id;
+        const evt = document.createEvent("MouseEvents");
+        evt.initMouseEvent(
+            "click",
+            true,
+            true,
+            window,
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            false,
+            false,
+            false,
+            0,
+            null
+        );
+        a.dispatchEvent(evt);
+    });
+    return false;
 }
 
 function buildTable(realms, games) {
@@ -47,7 +88,7 @@ function buildTable(realms, games) {
         Object.values(games).map(game =>
             tr(
                 { class: game.active > 0 ? "has_boards" : "" },
-                td(a({ href: fixLink(game.link), target: "_blank" }, game.name)),
+                td(a({ href: fixLink(game.bga_id), target: "_blank", click: autoBoard, game_id: game.bga_id }, game.name)),
                 td({ class: "border" }),
                 rkeys.map(realm_id => td({ class: "number", title: game[realm_id]?.users?.replace(",", "\n") || "" }, game[realm_id]?.votes?.toString() || "")),
                 td(
