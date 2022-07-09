@@ -95,6 +95,7 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
         process(
             games,
             me.votes,
+            me.vetos,
             documentFragment(
                 h2("Real Time"),
                 span(
@@ -113,6 +114,7 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
         process(
             agames,
             me.avotes,
+            me.vetoes,
             documentFragment(
                 h2("Pass and Play"),
                 span(
@@ -129,12 +131,12 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
     }
 });
 
-const process = (games, votes, header) =>
-    new Promise((a, r) => a(games))
+const process = (games, votes, vetos, header) =>
+    new Promise(a => a(games))
         .then(games =>
             games.map(game => {
                 game.voted = votes.indexOf(game.game_id) !== -1;
-                game.vetoed = me.vetos.indexOf(game.game_id) !== -1;
+                game.vetoed = vetos.indexOf(game.game_id) !== -1;
                 game.score = game.votes - 4 * game.vetos;
                 return game;
             })

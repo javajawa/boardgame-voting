@@ -398,8 +398,8 @@ function prepareBoardMessage(ble) {
                         ),
                         board.seatsTaken < board.minSeats
                             ? span(
-                                  `(Needs ${board.minSeats - board.seatsTaken} players to launch in ${board.closes()})`
-                              )
+                                `(Needs ${board.minSeats - board.seatsTaken} players to launch in ${board.closes()})`
+                            )
                             : span(`(Will launch in ${board.closes()})`),
                         board.description ? p(board.description) : null
                     )
@@ -443,8 +443,8 @@ function getBoards(filter, boards, me) {
         }
 
         Object.entries(data.options).forEach(([id, value]) => {
-        	id = parseInt(id, 10);
-        	value = parseInt(value, 10);
+            id = parseInt(id, 10);
+            value = parseInt(value, 10);
 
             if (!game_options.has(id)) {
                 return;
@@ -462,7 +462,7 @@ function getBoards(filter, boards, me) {
                 return;
             }
 
-            table_modifiers.push(opt_value["tmdisplay"])
+            table_modifiers.push(opt_value["tmdisplay"]);
         });
 
         const board = new Board(
@@ -481,14 +481,6 @@ function getBoards(filter, boards, me) {
     });
 
     return list.sorted();
-}
-
-function getGroupBoards(boards) {
-    return boards.filter(board => board.max_seats !== 2);
-}
-
-function getChallengeBoards(boards) {
-    return boards.filter(board => board.max_seats === 2);
 }
 
 function createBlock(title, filter, boards, me) {
@@ -525,4 +517,4 @@ Promise.all([fetch("boards.json").then(r => r.json()), fetch("me").then(r => r.j
     document.body.appendChild(content);
 });
 
-window.compactToggle = e => window.localStorage.setItem("compact", document.body.classList.toggle('compact'));
+window.compactToggle = () => window.localStorage.setItem("compact", document.body.classList.toggle("compact"));
