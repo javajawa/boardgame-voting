@@ -51,7 +51,7 @@ function game_to_tr(game) {
         td("-"),
         number_to_td(game.max_players, "players", ""),
         number_to_td(game.votes, "border votes", ""),
-        number_to_td(game.vetos, "votes", ""),
+        number_to_td(game.vetoes, "votes", ""),
         ...vote
     );
 }
@@ -87,7 +87,7 @@ function table_headers() {
 Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.json())]).then(r => {
     let games, agames;
     games = r[0]["results"];
-    agames = r[0]["aresults"];
+    agames = r[0]["async_results"];
 
     const me = r[1];
 
@@ -95,7 +95,7 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
         process(
             games,
             me.votes,
-            me.vetos,
+            me.vetoes,
             documentFragment(
                 h2("Real Time"),
                 span(
@@ -113,13 +113,13 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
     if (agames.length) {
         process(
             agames,
-            me.avotes,
+            me.async_votes,
             me.vetoes,
             documentFragment(
                 h2("Pass and Play"),
                 span(
                     "You have votes for ",
-                    me.avotes.length.toString(),
+                    me.async_votes.length.toString(),
                     " (of a maximum of ",
                     me.max_votes.toString(),
                     " games). You can change you vote on the ",
@@ -131,13 +131,13 @@ Promise.all([fetch("results.json").then(r => r.json()), fetch("me").then(r => r.
     }
 });
 
-const process = (games, votes, vetos, header) =>
+const process = (games, votes, vetoes, header) =>
     new Promise(a => a(games))
         .then(games =>
             games.map(game => {
                 game.voted = votes.indexOf(game.game_id) !== -1;
-                game.vetoed = vetos.indexOf(game.game_id) !== -1;
-                game.score = game.votes - 4 * game.vetos;
+                game.vetoed = vetoes.indexOf(game.game_id) !== -1;
+                game.score = game.votes - 4 * game.vetoes;
                 return game;
             })
         )
@@ -164,15 +164,15 @@ function toggleVeto(event) {
         return;
     }
 
-    bounceTimer = window.setTimeout(sendVetos, 500);
+    bounceTimer = window.setTimeout(sendVetoes, 500);
 }
 
-function sendVetos() {
+function sendVetoes() {
     bounceTimer = null;
 
     const games = [...document.querySelectorAll("tr.vetoed")].map(e => e.getAttribute("game-id"));
 
-    console.log("Sending vetos for", games);
+    console.log("Sending vetoes for", games);
 
     fetch("veto", {
         method: "PUT",

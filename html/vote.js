@@ -88,7 +88,7 @@ Promise.all([fetch("games.json").then(r => r.json()), fetch("me").then(r => r.js
 
         return games.map(game => {
             game.voted = me.votes.indexOf(game.game_id) !== -1;
-            game.avoted = me.avotes.indexOf(game.game_id) !== -1;
+            game.avoted = me.async_votes.indexOf(game.game_id) !== -1;
             game.realm = me.realm;
             return game;
         });
@@ -120,10 +120,10 @@ function sendVotes() {
     bounceTimer = null;
 
     const games = [...document.querySelectorAll("tr.voted")].map(e => e.getAttribute("game-id"));
-    const agames = [...document.querySelectorAll("tr.avoted")].map(e => e.getAttribute("game-id"));
+    const async_games = [...document.querySelectorAll("tr.avoted")].map(e => e.getAttribute("game-id"));
 
     console.log("Sending realtime votes for", games);
-    console.log("Sending async votes for", agames);
+    console.log("Sending async votes for", async_games);
 
     fetch("vote", {
         method: "PUT",
@@ -131,11 +131,11 @@ function sendVotes() {
         body: JSON.stringify(games),
     }).then((document.querySelector(".js-votes").textContent = games.length));
 
-    fetch("avote", {
+    fetch("async-vote", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(agames),
-    }).then((document.querySelector(".js-avotes").textContent = games.length));
+        body: JSON.stringify(async_games),
+    }).then((document.querySelector(".js-async-votes").textContent = games.length));
 }
 
 function sortTable(event) {

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# vim: fileencoding=utf-8 expandtab ts=4 nospell
 
 # SPDX-FileCopyrightText: 2021 Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
 #
@@ -11,7 +10,6 @@ from __future__ import annotations
 
 from typing import Callable, Dict, IO, Optional, Tuple
 
-import cgi
 import dataclasses
 import json
 import sqlite3
@@ -115,9 +113,6 @@ class BGHandler(AuthHandler):
         if path == "logout":
             return self.logout(realm)
 
-        if path == "create":
-            return self.create_board(environ)
-
         return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
 
     def get_request(
@@ -139,6 +134,13 @@ class BGHandler(AuthHandler):
             _, admin = path.split("/", 1)
             return self.send_votes_overview(admin)
 
+        if path.startswith("create/"):
+            _, game, tokens = path.split("/", 2)
+
+            game_id = int(game)
+
+            return self.create_board(game_id, tokens)
+
         if path == "me":
             return self.send_user_details(realm, user)
 
@@ -150,7 +152,7 @@ class BGHandler(AuthHandler):
         if not user:
             return self.auth_challenge(realm)
 
-        mapping = {"vote": Vote.model, "avote": AsyncVote.model, "veto": Veto.model}
+        mapping = {"vote": Vote.model, "async-vote": AsyncVote.model, "veto": Veto.model}
 
         if path not in mapping:
             return Response(404, "text/plain", f"Path not found {path}".encode("utf-8"))
@@ -267,10 +269,10 @@ class BGHandler(AuthHandler):
                     "username": None,
                     "role": None,
                     "votes": [],
-                    "avotes": [],
-                    "vetos": [],
+                    "async_votes": [],
+                    "vetoes": [],
                     "max_votes": 999,
-                    "max_vetos": 3,
+                    "max_vetoes": 3,
                     "realm": dataclasses.asdict(realm),
                 }
             )
@@ -279,10 +281,10 @@ class BGHandler(AuthHandler):
             "username": user.username,
             "role": user.role,
             "votes": Vote.model(self.cursor).ids_for_left(user),
-            "avotes": AsyncVote.model(self.cursor).ids_for_left(user),
-            "vetos": Veto.model(self.cursor).ids_for_left(user),
+            "async_votes": AsyncVote.model(self.cursor).ids_for_left(user),
+            "vetoes": Veto.model(self.cursor).ids_for_left(user),
             "max_votes": 999,
-            "max_vetos": 3,
+            "max_vetoes": 3,
             "realm": dataclasses.asdict(user.realm),
         }
 
@@ -290,30 +292,33 @@ class BGHandler(AuthHandler):
 
     def send_results(self, realm: Realm) -> Response:
         votes, vetoes = self.get_realtime_votes(realm)
-        avotes, avetoes = self.get_passnplay_votes(realm)
+        async_votes, async_vetoes = self.get_async_votes(realm)
 
         game_ids = (
-            set(votes.keys()).union(vetoes.keys()).union(avotes.keys()).union(avetoes.keys())
+            set(votes.keys())
+            .union(vetoes.keys())
+            .union(async_votes.keys())
+            .union(async_vetoes.keys())
         )
         games = Game.model(self.cursor).get_many(*game_ids)
 
         data = []
-        adata = []
+        async_data = []
 
         for game in games.values():
             if game.game_id in votes:
                 datum = dataclasses.asdict(game)
                 datum["votes"] = votes.get(game.game_id, 0)
-                datum["vetos"] = vetoes.get(game.game_id, 0)
+                datum["vetoes"] = vetoes.get(game.game_id, 0)
                 data.append(datum)
 
-            if game.game_id in avotes:
+            if game.game_id in async_votes:
                 datum = dataclasses.asdict(game)
-                datum["votes"] = avotes.get(game.game_id, 0)
-                datum["vetos"] = avetoes.get(game.game_id, 0)
-                adata.append(datum)
+                datum["votes"] = async_votes.get(game.game_id, 0)
+                datum["vetoes"] = async_vetoes.get(game.game_id, 0)
+                async_data.append(datum)
 
-        return self.send_json({"results": data, "aresults": adata})
+        return self.send_json({"results": data, "async_results": async_data})
 
     def get_realtime_votes(self, realm: Realm) -> Tuple[Dict[int, int], Dict[int, int]]:
         self.cursor.execute(
@@ -340,11 +345,11 @@ class BGHandler(AuthHandler):
             (realm.realm_id,),
         )
 
-        vetos: Dict[int, int] = dict(self.cursor.fetchall())
+        vetoes: Dict[int, int] = dict(self.cursor.fetchall())
 
-        return votes, vetos
+        return votes, vetoes
 
-    def get_passnplay_votes(self, realm: Realm) -> Tuple[Dict[int, int], Dict[int, int]]:
+    def get_async_votes(self, realm: Realm) -> Tuple[Dict[int, int], Dict[int, int]]:
         self.cursor.execute(
             """
             SELECT [game_id], COUNT(0)
@@ -369,25 +374,17 @@ class BGHandler(AuthHandler):
             (realm.realm_id,),
         )
 
-        vetos: Dict[int, int] = dict(self.cursor.fetchall())
+        vetoes: Dict[int, int] = dict(self.cursor.fetchall())
 
-        return votes, vetos
+        return votes, vetoes
 
-    def create_board(self, environ: WSGIEnv) -> Response:
-        data = cgi.FieldStorage(environ=environ, fp=environ["wsgi.input"])  # type: ignore
+    def create_board(self, game_id: int, tokens: str) -> Response:
+        config = json.loads(tokens)
 
-        config_json = data["config"].value if "config" in data else ""
-        game_str = data["game"].value if "game" in data else ""
-
-        if not config_json or not game_str:
-            return self.send_json({"error": "Missing post fields", "id": None})
-
-        config = json.loads(config_json)
-
-        response = requests.get(
+        board_info = requests.get(
             "https://boardgamearena.com/table/table/createnew.html",
             params={
-                "game": game_str,
+                "game": str(game_id),
                 "gamemode": "async",
                 "forceManual": "true",
                 "is_meeting": "false",
@@ -396,8 +393,17 @@ class BGHandler(AuthHandler):
             headers={"x-request-token": config["TournoiEnLigneid"]},
         )
 
-        result = response.json()
+        result = board_info.json()
+        table_id = result.get("data", {}).get("table")
 
-        return self.send_json(
+        response = self.send_json(
             {"error": result.get("error"), "id": result.get("data", {}).get("table")}
         )
+        response.status = 302 if table_id else 503
+
+        if table_id:
+            response.headers.append(
+                ("location", f"https://boardgamearena.com/table?table={table_id}")
+            )
+
+        return response

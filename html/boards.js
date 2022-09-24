@@ -426,8 +426,8 @@ function getBoards(filter, boards, me) {
             data.game.luck,
             data.game.interaction,
             [], // tags,
-            me.avotes.includes(data.game.game_id),
-            me.vetos.includes(data.game.game_id)
+            me.async_votes.includes(data.game.game_id),
+            me.vetoes.includes(data.game.game_id)
         );
 
         let table_description = data.description;

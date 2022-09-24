@@ -30,44 +30,12 @@ function autoBoard(e) {
         return true;
     }
 
-    e.preventDefault();
+    const game = e.target.getAttribute("game_id");
 
-    const data = new URLSearchParams();
-    data.append("config", tokens);
-    data.append("game", e.target.getAttribute("game_id"));
+    e.target.href = `/cursed-chat/create/${encodeURIComponent(game)}/${encodeURIComponent(tokens)}`;
+    console.log(e.target.href);
 
-    fetch("/cursed-chat/create", {
-        method: "post",
-        body: data,
-    }).then(r => r.json()).then(r => {
-        if (r.error) {
-            window.alert(r.error);
-            return false;
-        }
-
-        const a = document.createElement("a");
-        a.href = "https://boardgamearena.com/table?table=" + r.id;
-        const evt = document.createEvent("MouseEvents");
-        evt.initMouseEvent(
-            "click",
-            true,
-            true,
-            window,
-            0,
-            0,
-            0,
-            0,
-            0,
-            true,
-            false,
-            false,
-            false,
-            0,
-            null
-        );
-        a.dispatchEvent(evt);
-    });
-    return false;
+    return true;
 }
 
 function buildTable(realms, games) {
@@ -88,7 +56,7 @@ function buildTable(realms, games) {
         Object.values(games).map(game =>
             tr(
                 { class: game.active > 0 ? "has_boards" : "" },
-                td(a({ href: fixLink(game.bga_id), target: "_blank", click: autoBoard, game_id: game.bga_id }, game.name)),
+                td(a({ href: fixLink(game.bga_id), target: "_blank", mousedown: autoBoard, game_id: game.bga_id }, game.name)),
                 td({ class: "border" }),
                 rkeys.map(realm_id => td({ class: "number", title: game[realm_id]?.users?.replace(",", "\n") || "" }, game[realm_id]?.votes?.toString() || "")),
                 td(
