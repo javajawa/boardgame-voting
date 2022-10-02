@@ -388,7 +388,9 @@ class TableModel(Generic[ModelledTable], BaseModel):
 
             for row in packed:
                 row[our_key] = frens[row[their_key]]
-                del row[their_key]
+
+                if our_key != their_key:
+                    del row[their_key]
 
         for our_key, sub_model in self.submodels.items():
             children = sub_model.select(cursor, *[row[self.id_field] for row in packed])
@@ -512,11 +514,6 @@ class TableModel(Generic[ModelledTable], BaseModel):
             # NOTE: This is valid, but using Model.get() is faster.
             Bar.model(cursor).search(bar_id=123)
         """
-
-        for name, model in self.foreigners.values():
-            if name in kwargs and isinstance(kwargs[name], model.record):
-                kwargs[model.id_field] = getattr(kwargs[name], model.id_field)
-                del kwargs[name]
 
         sql, params = self.where(self.foreigners, kwargs)
         sql = f"DELETE FROM [{self.table}] WHERE " + sql
@@ -856,7 +853,7 @@ class SubTable(Generic[ModelledTable], BaseModel):
         self,
         cursor: sqlite3.Cursor,
         connector: Table[Any],
-        lvalues: Optional[List[PrimitiveTypes]] = None,
+        lvalues: Optional[Set[PrimitiveTypes]] = None,
         kvalues: Optional[Dict[PrimitiveTypes, PrimitiveTypes]] = None,
     ) -> None:
         """Stores a list of values for a single parent object in the sub table"""
@@ -875,6 +872,11 @@ class SubTable(Generic[ModelledTable], BaseModel):
         if not isinstance(kvalues, list):
             raise Exception(
                 f"Expected list for {self.model.table}, got {type(kvalues).__name__}"
+            )
+
+        if lvalues is None:
+            raise Exception(
+                f"Expected set for {self.model.table}, got {type(lvalues).__name__}"
             )
 
         return self.store_column(cursor, connector, lvalues)
@@ -908,12 +910,15 @@ class SubTable(Generic[ModelledTable], BaseModel):
         if rows != len(existing - desired):
             _LOGGER.warning(
                 (
-                    "Potential issue when processing sub-table: expected to delete %d rows, "
-                    "but cursor only reported %d deleted.",
+                    "Potential issue when processing pivot sub-table: expected to delete %d rows, "
+                    "but cursor only reported %d deleted."
                 ),
                 len(existing - desired),
                 rows,
             )
+            _LOGGER.warning("Filters: %s", filters)
+            _LOGGER.warning("Existing: %s", existing)
+            _LOGGER.warning("Desired: %s", desired)
 
         for new_key in desired - existing:
             filters[self.pivot] = new_key
@@ -945,12 +950,15 @@ class SubTable(Generic[ModelledTable], BaseModel):
         if rows != len(existing - desired):
             _LOGGER.warning(
                 (
-                    "Potential issue when processing sub-table: expected to delete %d rows, "
-                    "but cursor only reported %d deleted.",
+                    "Potential issue when processing column sub-table: expected to delete %d rows, "
+                    "but cursor only reported %d deleted."
                 ),
                 len(existing - desired),
                 rows,
             )
+            _LOGGER.warning("Filters: %s", filters)
+            _LOGGER.warning("Existing: %s", existing)
+            _LOGGER.warning("Desired: %s", desired)
 
         for new_value in desired - existing:
             filters[self.field] = new_value
