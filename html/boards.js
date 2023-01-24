@@ -363,9 +363,11 @@ new Description(
 
 function prepareBoardMessage(ble) {
     const game = ble.game;
+    const has_only_intros = !ble.boards.some(board => !board.mods.includes("Intro"));
+    const has_no_intros = !ble.boards.some(board => board.mods.includes("Intro"));
 
     return article(
-        { class: (game.vote ? "voted" : "") + (game.veto ? "vetoed" : "") },
+        { class: (game.vote ? " voted" : "") + (game.veto ? " vetoed" : "") + (has_no_intros ? " no-intros" : "") + (has_only_intros ? " only-intros" : "") },
         img({ "class": "boxart", "src": game.image }),
         header(
             h3(game.name),
@@ -375,34 +377,33 @@ function prepareBoardMessage(ble) {
         ul(
             { "class": "table-list" },
             ble.boards.map(board =>
-                main(
-                    li(
-                        a({ href: board.link.toString(), target: "_blank" }, "View Table"),
-                        a(board.creator.admin, {
-                            class: "tag admin",
-                            href: "https://boardgamearena.com/player?id=" + board.creator.bga_id,
-                            target: "_blank",
-                        }),
-                        board.mods.map(tag => span(tag, { class: "tag" })),
-                        span(
-                            { class: "seatlist " + (board.seatsTaken < board.seatsMin ? "will-fire" : "needs-people") },
-                            [...Array(board.maxSeats).keys()].map(seat => {
-                                if (seat < board.seatsTaken) {
-                                    return span({ class: "seat taken" });
-                                }
-                                if (seat < board.minSeats) {
-                                    return span({ class: "seat needed" });
-                                }
-                                return span({ class: "seat available" });
-                            })
-                        ),
-                        board.seatsTaken < board.minSeats
-                            ? span(
-                                `(Needs ${board.minSeats - board.seatsTaken} players to launch in ${board.closes()})`
-                            )
-                            : span(`(Will launch in ${board.closes()})`),
-                        board.description ? p(board.description) : null
-                    )
+                li(
+                    {"class": board.mods.includes("Intro") ? "is-intro" : "not-intro"},
+                    a({ href: board.link.toString(), target: "_blank" }, "View Table"),
+                    a(board.creator.admin, {
+                        class: "tag admin",
+                        href: "https://boardgamearena.com/player?id=" + board.creator.bga_id,
+                        target: "_blank",
+                    }),
+                    board.mods.map(tag => span(tag, { class: "tag" })),
+                    span(
+                        { class: "seatlist " + (board.seatsTaken < board.seatsMin ? "will-fire" : "needs-people") },
+                        [...Array(board.maxSeats).keys()].map(seat => {
+                            if (seat < board.seatsTaken) {
+                                return span({ class: "seat taken" });
+                            }
+                            if (seat < board.minSeats) {
+                                return span({ class: "seat needed" });
+                            }
+                            return span({ class: "seat available" });
+                        })
+                    ),
+                    board.seatsTaken < board.minSeats
+                        ? span(
+                            `(Needs ${board.minSeats - board.seatsTaken} players to launch in ${board.closes()})`
+                        )
+                        : span(`(Will launch in ${board.closes()})`),
+                    board.description ? p(board.description) : null
                 )
             )
         )
@@ -518,3 +519,14 @@ Promise.all([fetch("boards.json").then(r => r.json()), fetch("me").then(r => r.j
 });
 
 window.compactToggle = () => window.localStorage.setItem("compact", document.body.classList.toggle("compact"));
+window.compactIntro = e => {
+   const current = parseInt(e.target.getAttribute("data-state")) || 0;
+   const next = current < 1 ? current + 1 : -1;
+
+   const cl = document.body.classList;
+
+    cl.toggle("hide-intros", next === -1);
+    cl.toggle("hide-regular", next === 1);
+    e.target.setAttribute("data-state", next);
+    e.target.textContent = "Toggle Intros (currently showing " + ["Non-Intro", "All", "Only Intro"][next+1] + ")";
+};

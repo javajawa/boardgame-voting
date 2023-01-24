@@ -227,3 +227,7 @@ body.compact .tablelist {
 	clear: none;
 }
 
+body.hide-intros .only-intros, body.hide-intros .is-intro, body.hide-regular .no-intros, body.hide-regular .not-intro {
+	display: none;
+}
+
