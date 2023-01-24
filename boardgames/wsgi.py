@@ -403,7 +403,7 @@ class BGHandler(AuthHandler):
 
         if table_id:
             response.headers.append(
-                ("location", f"https://boardgamearena.com/table?table={table_id}")
+                ("location", f"https://boardgamearena.com/table?table={table_id}&nr=true")
             )
 
         return response

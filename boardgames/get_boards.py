@@ -149,7 +149,7 @@ class BoardImporter(contextlib.ContextDecorator):
                 Board(
                     self.games[game_id],
                     admin,
-                    "https://boardgamearena.com/table?table=" + table["id"],
+                    "https://boardgamearena.com/table?table=" + table["id"] + "&nr=true",
                     min_players,
                     int(table["max_player"]),
                     len(table["players"]),
