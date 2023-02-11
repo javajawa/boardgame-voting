@@ -17,7 +17,7 @@ from typing import Any, Dict, Generator, Iterable, List, Mapping, Tuple, Union
 import abc
 import logging
 import orm  # pylint: disable=unused-import
-
+from orm.exceptions import ORMException
 
 OurField = str
 TheirField = str
@@ -109,7 +109,7 @@ class BaseModel(abc.ABC):
                     subvalues = [values[key]]  # type: ignore
 
                 if not all(isinstance(x, model.record) for x in subvalues):
-                    raise Exception("Passed incorrect object to foreign key")
+                    raise ORMException("Passed incorrect object to foreign key")
 
                 values[their_field] = set(self.map_foreign_objects(their_field, subvalues))
                 key = their_field

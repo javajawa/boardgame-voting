@@ -37,7 +37,7 @@ import sqlite3
 import typing_inspect  # type: ignore
 
 
-from .exceptions import MissingIdField
+from .exceptions import MissingIdField, ORMException
 from .abc import (
     BaseModel,
     MutableFilters as Filters,
@@ -92,7 +92,7 @@ def _make_model(cls: Type[ModelledTable]) -> TableModel[ModelledTable]:
     table = cls.__name__
     id_field = re.sub(r"(?<!^)(?=[A-Z])", "_", table).lower() + "_id"
 
-    model: TableModel[ModelledTable] = TableModel(cls, table, id_field)
+    model: TableModel[ModelledTable] = TableModel(cls, table, id_field)  # type: ignore
     types = get_type_hints(cls)
 
     if id_field not in types:
@@ -104,7 +104,7 @@ def _make_model(cls: Type[ModelledTable]) -> TableModel[ModelledTable]:
         if _field in [id_field]:
             continue
 
-        _process_type(model, cls, _field, _type)
+        _process_type(model, cls, _field, _type)  # type: ignore
 
     return model
 
@@ -115,13 +115,12 @@ def _process_type(
     _field: str,
     _type: Type[Any],
 ) -> None:
-
     _type, required = _decompose_type(_type)
 
     for field, submodel in getattr(cls, _SUBTABLES, {}).items():
         if _field == field:
             if _type != submodel.get_expected_type():
-                raise Exception(
+                raise ORMException(
                     f"Unexpected type {_type} for submodel {submodel.model.table}"
                 )
 
@@ -130,7 +129,7 @@ def _process_type(
             return
 
     if not _is_valid_type(_type):
-        raise Exception(f"Field `{_field}` in `{model.table}` is not a valid type")
+        raise ORMException(f"Field `{_field}` in `{model.table}` is not a valid type")
 
     if _type not in _TYPE_MAP:
         # Set up the foreign type mapping
@@ -246,12 +245,12 @@ def unique(*fields: str) -> Callable[[Type[ModelledTable]], Type[ModelledTable]]
         """Adds a unique key to a Table"""
 
         if not issubclass(cls, Table):
-            raise Exception(f"{cls.__name__} is not a sub class of Table")
+            raise ORMException(f"{cls.__name__} is not a sub class of Table")
 
         model: TableModel[ModelledTable] = _get_model(cls)
 
         if not all(field in model.table_fields for field in fields):
-            raise Exception(f"{cls.__name__} does not have all fields specified in key")
+            raise ORMException(f"{cls.__name__} does not have all fields specified in key")
 
         uniques: List[Set[str]] = getattr(cls, _UNIQUES, [])
         uniques.append(set(fields))
@@ -449,7 +448,7 @@ class TableModel(Generic[ModelledTable], BaseModel):
         """
 
         if not isinstance(record, self.record):
-            raise Exception("Wrong type")
+            raise ORMException("Wrong type")
 
         fields = list(self.table_fields.keys())
         data: Dict[str, Any] = {}
@@ -481,7 +480,7 @@ class TableModel(Generic[ModelledTable], BaseModel):
             sub_model.store(
                 cursor,
                 record,
-                sub_data if isinstance(sub_data, list) else None,
+                set(sub_data) if isinstance(sub_data, (set, list)) else None,
                 sub_data if isinstance(sub_data, dict) else None,
             )
 
@@ -658,7 +657,7 @@ def subtable(
         """Adds a subtable key to a Table"""
 
         if not issubclass(cls, Table):
-            raise Exception(f"{cls.__name__} is not a sub class of Table")
+            raise ORMException(f"{cls.__name__} is not a sub class of Table")
 
         subtables: Dict[str, SubTable[ModelledTable]] = getattr(cls, _SUBTABLES, {})
         subtables[field] = sub
@@ -746,7 +745,9 @@ class SubTable(Generic[ModelledTable], BaseModel):
         This method will fail if it has been connected already."""
 
         if self.connector:
-            raise Exception("Attempting to connect an already connected sub-table instance")
+            raise ORMException(
+                "Attempting to connect an already connected sub-table instance"
+            )
 
         # Confirm that the source table has a relation to the parent table
         # that is now claiming us as a sub-table
@@ -781,7 +782,7 @@ class SubTable(Generic[ModelledTable], BaseModel):
         """Selects the sub table values for a set of parent objects."""
 
         if not self.connector:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         if self.pivot:
             return self.select_pivot(cursor, connector_value)
@@ -796,7 +797,7 @@ class SubTable(Generic[ModelledTable], BaseModel):
         This is a sub-call of select(), for use when the sub table is a Set[] type."""
 
         if not self.connector:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         where: Filters = dict(self.selectors)
         where[self.connector] = connector_value
@@ -826,7 +827,7 @@ class SubTable(Generic[ModelledTable], BaseModel):
         This is a sub-call of select(), for use when the sub table is a Dict[] type."""
 
         if not self.connector:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         where: Filters = dict(self.selectors)
         where[self.connector] = connectors
@@ -859,23 +860,23 @@ class SubTable(Generic[ModelledTable], BaseModel):
         """Stores a list of values for a single parent object in the sub table"""
 
         if not self.connector:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         if self.pivot:
             if not isinstance(kvalues, dict):
-                raise Exception(
+                raise ORMException(
                     f"Expected dict for {self.model.table}, got {type(kvalues).__name__}"
                 )
 
             return self.store_pivot(cursor, connector, kvalues)
 
         if not isinstance(kvalues, list):
-            raise Exception(
+            raise ORMException(
                 f"Expected list for {self.model.table}, got {type(kvalues).__name__}"
             )
 
         if lvalues is None:
-            raise Exception(
+            raise ORMException(
                 f"Expected set for {self.model.table}, got {type(lvalues).__name__}"
             )
 
@@ -890,10 +891,10 @@ class SubTable(Generic[ModelledTable], BaseModel):
         """Stores a dict of values in the sub table"""
 
         if not self.connector:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         if not self.pivot:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         connector_value = getattr(connector, self.connector)
 
@@ -932,10 +933,10 @@ class SubTable(Generic[ModelledTable], BaseModel):
         """Stores a list of values in the sub table"""
 
         if not self.connector:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         if self.pivot:
-            raise Exception(f"{self.model.table} has not been attached to a model")
+            raise ORMException(f"{self.model.table} has not been attached to a model")
 
         connector_value = getattr(connector, self.connector)
 

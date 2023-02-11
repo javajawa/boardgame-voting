@@ -29,6 +29,7 @@ import logging
 import sqlite3
 
 from .abc import execute
+from .exceptions import ORMException
 from .table import TableModel, Table, _get_model
 
 
@@ -52,12 +53,12 @@ def _make_join(data_class: Type[JoinTable[Left, Right]]) -> JoinModel[Left, Righ
     """Create the model for a JoinTable"""
 
     if not inspect.isclass(data_class):
-        raise Exception("Can not make join data from non-class")
+        raise ORMException("Can not make join data from non-class")
 
     types = get_type_hints(data_class)
 
     if len(types) != 2:
-        raise Exception("Can only build a join table with two fields")
+        raise ORMException("Can only build a join table with two fields")
 
     left, right = types.values()
 
@@ -65,10 +66,10 @@ def _make_join(data_class: Type[JoinTable[Left, Right]]) -> JoinModel[Left, Righ
     right_model: TableModel[Right] = _get_model(right)
 
     if not left_model:
-        raise Exception(f"{left.__name__} is not a Table")
+        raise ORMException(f"{left.__name__} is not a Table")
 
     if not right_model:
-        raise Exception(f"{right.__name__} is not a Table")
+        raise ORMException(f"{right.__name__} is not a Table")
 
     table = data_class.__name__
 
@@ -293,10 +294,10 @@ class JoinModel(Generic[Left, Right]):
         """
 
         if not isinstance(left, self.left.record):
-            raise Exception("Wrong type")
+            raise ORMException("Wrong type")
 
         if not isinstance(right, self.right.record):
-            raise Exception("Wrong type")
+            raise ORMException("Wrong type")
 
         left_id = getattr(left, self.left.id_field)
         right_id = getattr(right, self.right.id_field)
@@ -319,10 +320,10 @@ class JoinModel(Generic[Left, Right]):
         """
 
         if not isinstance(left, self.left.record):
-            raise Exception("Wrong type")
+            raise ORMException("Wrong type")
 
         if not isinstance(right, self.right.record):
-            raise Exception("Wrong type")
+            raise ORMException("Wrong type")
 
         left_id = getattr(left, self.left.id_field)
         right_id = getattr(right, self.right.id_field)

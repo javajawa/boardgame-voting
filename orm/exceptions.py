@@ -14,5 +14,9 @@ Tables store an array of fields.
 from __future__ import annotations
 
 
-class MissingIdField(Exception):
+class ORMException(Exception):
+    pass
+
+
+class MissingIdField(ORMException):
     """Exception class for a Table which does not have an appropriate ID field"""
