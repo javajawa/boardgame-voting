@@ -193,7 +193,7 @@ class BGHandler(AuthHandler):
         model = BoardRealm.model(self.cursor)
 
         boards = model.of_right(realm)
-        data = [dataclasses.asdict(board) for board in boards]
+        data = [dataclasses.asdict(board) for board in boards if board.state == "open"]
 
         return self.send_json(data)
 
@@ -391,6 +391,7 @@ class BGHandler(AuthHandler):
             },
             cookies=config,
             headers={"x-request-token": config["TournoiEnLigneid"]},
+            timeout=30,
         )
 
         result = board_info.json()

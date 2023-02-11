@@ -139,8 +139,10 @@ class BoardOptions(orm.Table["BoardOptions"]):
 @orm.subtable("options", BoardOptions, "option_value", "option_id")
 @dataclass
 class Board(orm.Table["Board"]):
+    board_id: int
     game: Game
     creator: BoardAdmin
+    state: str
     link: str
     min_seats: int
     max_seats: int
@@ -148,8 +150,11 @@ class Board(orm.Table["Board"]):
     created: datetime.datetime
     description: str
 
+    launch_time: Optional[datetime.datetime] = None
+    last_seen: Optional[datetime.datetime] = None
+    close_time: Optional[datetime.datetime] = None
+
     options: Dict[int, int] = dataclasses.field(default_factory=dict)
-    board_id: Optional[int] = None
 
 
 @dataclass

@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import contextlib
 import datetime
@@ -19,8 +19,8 @@ import sys
 
 import requests
 
-from systemd.journal import JournalHandler  # type: ignore
 
+from orm.table import ModelWrapper
 from boardgames.model import Board, BoardAdmin, BoardAdminRealm, BoardRealm, Game, Realm
 
 
@@ -33,16 +33,17 @@ class BoardImporter(contextlib.ContextDecorator):
     admins: List[BoardAdmin]
     connection: sqlite3.Connection
     cursor: sqlite3.Cursor
-    boards: List[Tuple[Board, List[Realm]]]
+    board_model: ModelWrapper[Board]
+    now: datetime.datetime
 
     def __init__(self, connection: sqlite3.Connection):
         self.realms = {}
         self.games = {}
-        self.boards = []
 
         self.connection = connection
         self.cursor = connection.cursor()
 
+        self.board_model = Board.model(self.cursor)
         self.admins = BoardAdmin.model(self.cursor).all()
         self.games = {
             game.bga_id: game for game in Game.model(self.cursor).all() if game.bga_id
@@ -52,6 +53,7 @@ class BoardImporter(contextlib.ContextDecorator):
             for realm in Realm.model(self.cursor).all()
             if realm.bga_group
         }
+        self.now = datetime.datetime.now()
 
     @staticmethod
     def get_bga_game_id(game: Game) -> Optional[int]:
@@ -77,7 +79,20 @@ class BoardImporter(contextlib.ContextDecorator):
                 if admin.bga_id:
                     self.import_by_user(session, admin)
 
-        self.store()
+        self.cursor.execute(
+            (
+                "UPDATE Board SET state = 'no_fire', close_time = ? "
+                "WHERE state = 'open' AND last_seen < ?"
+            ),
+            (self.now, self.now),
+        )
+        self.cursor.execute(
+            (
+                "UPDATE Board SET state = 'finished', close_time = ?"
+                "WHERE state = 'play' AND last_seen < ?"
+            ),
+            (self.now, self.now),
+        )
 
         LOGGER.info("Committing")
         self.connection.commit()
@@ -90,7 +105,7 @@ class BoardImporter(contextlib.ContextDecorator):
             "https://en.boardgamearena.com/tablemanager/tablemanager/tableinfos.html",
             params={
                 "playerfilter": str(admin.bga_id),
-                "status": "open",
+                # "status": "open",
                 "dojo.preventCache": str(int(time.time())),
             },
         )
@@ -110,56 +125,78 @@ class BoardImporter(contextlib.ContextDecorator):
     def process_table(
         self, admin: BoardAdmin, default_realms: List[Realm], table: Dict[str, Any]
     ) -> None:
+        board_id = int(table["id"])
         game_id = int(table["game_id"])
 
-        if int(table["admin_id"]) != admin.bga_id:
+        if int(table.get("admin_id", 0)) != admin.bga_id:
             return
 
         if game_id not in self.games:
             LOGGER.error("Unable to find game %s in database", table["game_name"])
             return
 
-        if table["filter_group_type"] is None:
-            LOGGER.info("Missing filter group for board %s", game_id)
-            return
+        board = self.board_model.get(board_id)
+        realms = self.get_realms_for_board(default_realms, table)
 
-        realms: List[Realm] = list(default_realms)
+        if not board:
+            board = self.create_board(admin, table)
 
-        if table["filter_group_type"] == "normal":
-            group_id = int(table["filter_group"])
-            group = self.realms.get(group_id, None)
+        board.state = table["status"].replace("async", "")
+        board.created = datetime.datetime.utcfromtimestamp(int(table["scheduled"]))
+        board.launch_time = (
+            datetime.datetime.utcfromtimestamp(int(table["gamestart"]))
+            if table["gamestart"]
+            else None
+        )
+        board.last_seen = self.now
+        board.seats_taken = len(table["players"])
 
-            if not group:
-                LOGGER.warning(
-                    "Unknown group %s for game %s %d",
-                    table["filter_group"],
-                    table["game_name"],
-                    game_id,
-                )
-                return
-
-            realms = [group]
+        # We want to keep the max/min seat info from the board's creation
+        if board.state == "open":
+            board.min_seats = self.get_min_players(table)
+            board.max_seats = int(table["max_player"])
+            board.description = table["presentation"]
+            board.options = {int(k): int(v) for k, v in table["options"].items()}
 
         LOGGER.debug("Adding board %s (%s)", table["id"], self.games[game_id].name)
 
-        min_players = self.get_min_players(table)
+        self.store(board, realms)
 
-        self.boards.append(
-            (
-                Board(
-                    self.games[game_id],
-                    admin,
-                    "https://boardgamearena.com/table?table=" + table["id"] + "&nr=true",
-                    min_players,
-                    int(table["max_player"]),
-                    len(table["players"]),
-                    datetime.datetime.utcfromtimestamp(int(table["scheduled"])),
-                    table["presentation"],
-                    {int(k): int(v) for k, v in table["options"].items()},
-                ),
-                realms,
-            )
+    def create_board(self, admin: BoardAdmin, table: Dict[str, Any]) -> Board:
+        return Board(
+            board_id=table["id"],
+            game=self.games[int(table["game_id"])],
+            creator=admin,
+            state="open",
+            link="https://boardgamearena.com/table?table=" + table["id"] + "&nr=true",
+            min_seats=0,
+            max_seats=0,
+            seats_taken=0,
+            created=self.now,
+            description=table["presentation"],
+            options={},
         )
+
+    def get_realms_for_board(
+        self, default_realms: List[Realm], table: Dict[str, Any]
+    ) -> List[Realm]:
+        if table["filter_group_type"] is None:
+            LOGGER.info("Missing filter group for board %s", table["id"])
+            return []
+
+        if table["filter_group_type"] != "normal":
+            return default_realms
+
+        group_id = int(table["filter_group"])
+        group = self.realms.get(group_id, None)
+
+        if group:
+            return [group]
+
+        LOGGER.warning(
+            "Unknown group %s for game %s", table["filter_group"], table["game_name"]
+        )
+        return []
 
     def get_min_players(self, table: Dict[str, Any]) -> int:
         players = self.games[int(table["game_id"])].min_players
@@ -175,20 +212,12 @@ class BoardImporter(contextlib.ContextDecorator):
 
         return players
 
-    def store(self) -> None:
-        model = Board.model(self.cursor)
-        rmodel = BoardRealm.model(self.cursor)
+    def store(self, board: Board, realms: List[Realm]) -> None:
+        self.board_model.store(board)
 
-        LOGGER.info("Deleting all boards")
-        self.cursor.execute("DELETE FROM BoardRealm")
-        self.cursor.execute("DELETE FROM Board")
-
-        LOGGER.info("Addings %d boards", len(self.boards))
-        for board, realms in self.boards:
-            model.store(board)
-
-            for realm in realms:
-                rmodel.store(board, realm)
+        realm_model = BoardRealm.model(self.cursor)
+        for realm in realms:
+            realm_model.store(board, realm)
 
 
 def main() -> None:
@@ -202,6 +231,8 @@ if __name__ == "__main__":
         LOGGER.addHandler(logging.StreamHandler())
         LOGGER.setLevel(logging.DEBUG)
     else:
+        from systemd.journal import JournalHandler  # type: ignore
+
         LOGGER.addHandler(JournalHandler(SYSLOG_IDENTIFIER="bg-get-boards"))
         LOGGER.setLevel(logging.WARNING)
 

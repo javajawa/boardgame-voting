@@ -6,3 +6,4 @@ bcrypt
 gunicorn
 requests
 PYYaml
+typing_inspect
