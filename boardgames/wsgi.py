@@ -40,6 +40,8 @@ FILES: Dict[str, Tuple[str, str]] = {
     "/overview.js": ("html/overview.js", "application/javascript"),
     "/style.css": ("html/style.css", "text/css"),
     "/favicon.ico": ("html/favicon.png", "image/png"),
+    "/cookies.png": ("html/cookies.png", "image/png"),
+    "/group.png": ("html/group.png", "image/png"),
     "/person.svg": ("html/person.svg", "image/svg+xml"),
     "/seat.svg": ("html/seat.svg", "image/svg+xml"),
 }

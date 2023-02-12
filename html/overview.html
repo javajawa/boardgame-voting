@@ -23,11 +23,48 @@ SPDX-License-Identifier: BSD-2-Clause
         </nav>
         <h1>Votes Overview</h1>
         <p>Please wait, results are loading.</p>
-        <p>
-            Automation: if you want tables to be created automagically, you will need to
-            <a href="javascript:(() => {b = document.createElement('textarea');b.appendChild(document.createTextNode(JSON.stringify(Object.fromEntries(document.cookie.split('; ').map(c => c.split('=')).map(([k, ...v]) => [k, v.join('=')]).filter(([k, v]) => k.startsWith('Tournoi'))))));b.style.position = 'fixed';b.style.top = '0';b.style.left = '0';b.style.width = '600px';b.style.height = '400px';b.style.zIndex = 9999999;document.body.appendChild(b)})()">drag this link into bookmarks</a>
-            then click on it on a BGA page. This will pop up a box of tokens to put in the box below.
-        </p>
+        <details>
+            <summary>Automation for creating tables</summary>
+            <p>
+                The board game site does support actually creating the boards for you, but to do so
+                it needs 'access' to your BGA account. This works by giving it a copy of some cookies
+                which are not logged or stored on the server.
+            </p>
+            <p>The process to get this data is fiddly:</p>
+            <ul>
+                <li>Open a BGA page, then open your browsers developer tools</li>
+                <li>Refresh the page</li>
+                <li>In the network tab of the dev tools, open the details of the first request</li>
+                <li>In the Headers tab, in the Request Headers section, there will be a field called <code>cookie</code> (see image)</li>
+                <li>Copy the script below into the console section of the dev tools, and put the value after the `cookie:` into it</li>
+                <li>Hit enter to run the code. A box will appear back on the BGA screen</li>
+                <li>Copy that data into the box at the top of the game list on this page</li>
+                <li>When you click on a game link, you will be taken to your newly created table!</li>
+            </ul>
+            <img src="/cookies.png">
+            <code style="border: 1px solid black; display: block">
+                ((cookies) => {b = document.createElement('textarea');b.appendChild(document.createTextNode(JSON.stringify(Object.fromEntries(cookies.split('; ').map(c => c.split('=')).map(([k, ...v]) => [k, v.join('=')]).filter(([k, v]) => !k.startsWith('_'))))));b.style.position = 'fixed';b.style.top = '0';b.style.left = '0';b.style.width = '600px';b.style.height = '400px';b.style.zIndex = 9999999;document.body.appendChild(b)})("put your cookie data between these quotes");
+            </code>
+            <p>Note: these values work for quite a while, so for ease of use you can write them down somewhere until they stop working.</p>
+        </details>
+        <details>
+            <summary>Automation for configuring tables</summary>
+            <p>
+                This code snippet, when run on a BGA board page, will set the game to normal mode (rather than training),
+                the turn timer to once every two days, and change the group restriction.
+                You will need to replace the group ID with your 'my friends' group ID (or other group of your choice).
+                To do so, open the 'restrict table access dialog on a board, and right-click on the group dropdown.
+                From the menu, click inspect element, expand the select, and find the ID of the desired group.
+            </p>
+            <img src="/group.png">
+            <p>
+                 Copy the code below, replace the id in the quotes, and then create a new bookmark with this as the URL,
+                 starting with <code>javascript:</code> (no <code>http:</code>)
+            </p>
+            <code style="border: 1px solid black; display: block">
+                javascript:((e, ev,c,h) => {let s;e("limit_table_access").querySelector("a")[c]();s = e("restrictToGroup");s.value = "6200361"/*your id here*/;ev(h, s);e("limit_table_access_close")[c]();setTimeout(() => {s=e("gameoption_201_input");if (s.value != 0) {s.value=0;ev(h, s);}setTimeout(() => {s=e("gameoption_200_input");if (s.value != 19) {s.value = 19;ev(h, s);}setTimeout(() => {e("open_table_now")[c]();e("join_confirm")[c]();}, 100);}, 100);}, 100);})(e=>document.getElementById(e),(ev, elem) => {const e = document.createEvent("HTMLEvents");e.initEvent(ev, true, true);ev.eventName = ev;elem.dispatchEvent(e);},"click","change");
+            </code>
+        </details>
         <textarea name="tokens" id="tokens" style="display: block; width: 100%"></textarea>
     </body>
 </html>
