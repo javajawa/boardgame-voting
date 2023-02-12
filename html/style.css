@@ -129,9 +129,17 @@ tr:not(.vetoed) > td.veto::after {
     font-size: 12pt;
 }
 
-tr.has_boards {
+tr.suppressed {
     opacity: 0.7;
     filter: contrast(0.1);
+}
+
+tr.has_boards {
+    background: rgba(64, 192, 122, 0.2);
+}
+
+tr.has_boards:nth-child(2n) {
+	background: rgba(128, 255, 0, 0.2) !important;
 }
 
 #logout-form {

@@ -129,7 +129,9 @@ def _process_type(
             return
 
     if not _is_valid_type(_type):
-        raise ORMException(f"Field `{_field}` in `{model.table}` is not a valid type")
+        raise ORMException(
+            f"Field `{_field}` of type `{_type}` in `{model.table}` is not a valid type"
+        )
 
     if _type not in _TYPE_MAP:
         # Set up the foreign type mapping
@@ -159,7 +161,7 @@ def _decompose_type(_type: Type[Any]) -> Tuple[Type[Any], bool]:
 
 
 def _is_valid_type(_type: Type[Any]) -> bool:
-    """Checks if a given type is recognised and usable with with the ORM system"""
+    """Checks if a given type is recognised and usable with the ORM system"""
 
     if _type in _TYPE_MAP:
         return True
@@ -315,7 +317,9 @@ class TableModel(Generic[ModelledTable], BaseModel):
             sql.append(f"UNIQUE ([{'], ['.join(_fields)}]), ")
 
         for _field, (f_key, _model) in self.foreigners.items():
-            sql.append(f"FOREIGN KEY ([{_field}]) REFERENCES [{_model.table}] ([{f_key}]), ")
+            sql.append(
+                f"FOREIGN KEY ([{f_key}]) REFERENCES [{_model.table}] ([{_model.id_field}]), "
+            )
 
         return "\n".join(sql).strip(", ") + "\n);"
 
@@ -722,7 +726,10 @@ class SubTable(Generic[ModelledTable], BaseModel):
             raise ValueError(f"Value field {self.field} not present in {self.model.table}")
 
         if self.pivot:
-            if self.pivot not in self.model.table_fields:
+            if (
+                self.pivot not in self.model.table_fields
+                and self.pivot not in self.model.foreigners
+            ):
                 raise ValueError(
                     f"Pivot field {self.pivot} not present in {self.model.table}"
                 )

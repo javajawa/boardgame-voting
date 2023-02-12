@@ -9,8 +9,9 @@
 
 from __future__ import annotations
 
-import dataclasses
 from typing import Dict, Optional
+
+import sqlite3
 
 from dataclasses import dataclass, field
 import datetime
@@ -68,7 +69,7 @@ class Game(orm.Table["Game"]):
 
     added: datetime.datetime = field(default_factory=datetime.datetime.now)
 
-    options: Dict[int, str] = dataclasses.field(default_factory=dict)
+    options: Dict[int, str] = field(default_factory=dict)
 
     bga_id: Optional[int] = None
     bgg_id: Optional[int] = None
@@ -113,11 +114,23 @@ class Veto(orm.JoinTable[User, Game]):
     game: Game
 
 
-@orm.unique("admin", "bga_id")
+@orm.unique("board_admin_id", "game_id")
+@dataclass
+class BoardAdminSuppression(orm.Table["BoardAdminSuppression"]):
+    board_admin_id: int
+    game: Game
+    until: datetime.datetime
+    board_admin_suppression_id: Optional[int] = None
+
+
+@orm.unique("admin")
+@orm.unique("bga_id")
+# @orm.subtable("suppressions", BoardAdminSuppression, "until", "game")
 @dataclass
 class BoardAdmin(orm.Table["BoardAdmin"]):
     admin: str
     bga_id: int
+    # suppressions: Dict[Game, datetime.datetime] = dataclasses.field(default_factory=dict)
     board_admin_id: Optional[int] = None
 
 
@@ -154,10 +167,34 @@ class Board(orm.Table["Board"]):
     last_seen: Optional[datetime.datetime] = None
     close_time: Optional[datetime.datetime] = None
 
-    options: Dict[int, int] = dataclasses.field(default_factory=dict)
+    options: Dict[int, int] = field(default_factory=dict)
 
 
 @dataclass
 class BoardRealm(orm.JoinTable[Board, Realm]):
     board: Board
     realm: Realm
+
+
+if __name__ == "__main__":
+    with sqlite3.connect("games.db") as connection:
+        cursor = connection.cursor()
+
+        Realm.create_table(cursor)
+        User.create_table(cursor)
+        GameOptions.create_table(cursor)
+        Game.create_table(cursor)
+        Tag.create_table(cursor)
+        GameTags.create_table(cursor)
+        RealmBlacklist.create_table(cursor)
+        Vote.create_table(cursor)
+        AsyncVote.create_table(cursor)
+        Veto.create_table(cursor)
+        BoardAdminSuppression.create_table(cursor)
+        BoardAdmin.create_table(cursor)
+        BoardAdminRealm.create_table(cursor)
+        BoardOptions.create_table(cursor)
+        Board.create_table(cursor)
+        BoardRealm.create_table(cursor)
+
+        connection.commit()

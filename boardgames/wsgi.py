@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import Callable, Dict, IO, Optional, Tuple
 
 import dataclasses
@@ -21,7 +22,8 @@ from boardgames.auth_handler import AuthHandler
 from boardgames.model import (
     AsyncVote,
     BoardRealm,
-    BoardAdminRealm,
+    BoardAdmin,
+    BoardAdminSuppression,
     Game,
     Realm,
     User,
@@ -149,6 +151,9 @@ class BGHandler(AuthHandler):
     def put_request(
         self, realm: Realm, user: Optional[User], path: str, data: IO[bytes]
     ) -> Response:
+        if path == "suppress":
+            return self.suppress_request(data)
+
         if not user:
             return self.auth_challenge(realm)
 
@@ -166,6 +171,27 @@ class BGHandler(AuthHandler):
 
         for game in game_model.get_many(*ids).values():
             vote_model.store(user, game)
+
+        self.connection.commit()
+
+        return Response(204, "", b"")
+
+    def suppress_request(self, data: IO[bytes]) -> Response:
+        request = json.load(data)
+
+        admins = BoardAdmin.model(self.cursor).search(admin=request.get("admin", ""))
+        game = Game.model(self.cursor).get(request.get("game_id", 0))
+
+        if not admins or not game:
+            return Response(404, "", b"")
+
+        BoardAdminSuppression.model(self.cursor).store(
+            BoardAdminSuppression(
+                admins[0].board_admin_id or 0,
+                game,
+                datetime.datetime.now() + datetime.timedelta(days=request.get("days", 0)),
+            )
+        )
 
         self.connection.commit()
 
@@ -198,69 +224,58 @@ class BGHandler(AuthHandler):
         return self.send_json(data)
 
     def send_votes_overview(self, admin: str) -> Response:
-        raw_realms = BoardAdminRealm.model(self.cursor).from_left(admin=admin)
+        admins = BoardAdmin.model(self.cursor).search(admin=admin)
 
-        if not raw_realms:
+        if not admins:
             return Response(404, "text/plain", b"Not Found")
 
-        realms = {realm.realm_id: realm for realm in raw_realms}
-        params = ", ".join("?" * len(realms))
+        admin_id = admins[0].board_admin_id
 
         self.cursor.execute(
             (
-                "SELECT game_id, realm_id, COUNT(0), GROUP_CONCAT(DISTINCT username) "
-                "FROM Game NATURAL JOIN AsyncVote NATURAL JOIN User "
-                f"WHERE realm_id IN ({params}) "
-                "AND Game.platform = 'BGA' "
-                "GROUP BY game_id, realm_id"
+                "SELECT game_id, name, bga_id, link, description, votes, users, "
+                "until, open, created, last_created, launched, last_launched "
+                "FROM Game "
+                "NATURAL LEFT JOIN ( "
+                "SELECT game_id, SUM(IIF(state == 'open', 1, 0)) open, "
+                "COUNT(0) created, MAX(created) last_created, "
+                "COUNT(launch_time) launched, MAX(launch_time) last_launched "
+                "FROM Board WHERE board_admin_id = ? GROUP BY game_id "
+                ") "
+                "NATURAL LEFT JOIN ( "
+                "SELECT game_id, COUNT(0) votes, GROUP_CONCAT(DISTINCT username) users "
+                "FROM AsyncVote NATURAL JOIN User NATURAL JOIN BoardAdminRealm "
+                "WHERE board_admin_id = ? "
+                "GROUP BY game_id "
+                ") "
+                "NATURAL LEFT JOIN ( "
+                "SELECT game_id, until FROM BoardAdminSuppression WHERE board_admin_id = ? "
+                ") "
+                "WHERE Game.platform = 'BGA' "
+                "GROUP BY Game.game_id; "
             ),
-            tuple(realms.keys()),
+            (admin_id, admin_id, admin_id),
         )
 
-        rows = self.cursor.fetchall()
+        fields = [
+            "game_id",
+            "name",
+            "bga_id",
+            "link",
+            "description",
+            "votes",
+            "users",
+            "until",
+            "open",
+            "created",
+            "last_created",
+            "launched",
+            "last_launched",
+        ]
 
-        games = Game.model(self.cursor).get_many(*set(r[0] for r in rows))
+        rows = [dict(zip(fields, x)) for x in self.cursor.fetchall()]
 
-        self.cursor.execute(
-            (
-                "SELECT game_id, COUNT(DISTINCT board_id) "
-                "FROM Board NATURAL JOIN BoardRealm "
-                f"WHERE realm_id IN ({params}) "
-                "GROUP BY game_id"
-            ),
-            tuple(realms.keys()),
-        )
-        boards = dict(self.cursor.fetchall())
-
-        self.cursor.execute(
-            (
-                "SELECT game_id, COUNT(DISTINCT board_id) FROM "
-                "Board NATURAL JOIN BoardAdmin WHERE admin = ? GROUP BY game_id"
-            ),
-            (admin,),
-        )
-        my_boards = dict(self.cursor.fetchall())
-
-        data = {}
-
-        for game_id, realm_id, votes, users in rows:
-            if game_id not in data:
-                data[game_id] = {
-                    "name": games[game_id].name,
-                    "bga_id": games[game_id].bga_id,
-                    "link": games[game_id].link,
-                    "active": boards.get(game_id, 0),
-                    "mine": my_boards.get(game_id, 0),
-                }
-
-            data[game_id][realms[realm_id].realm] = {
-                "votes": votes,
-                "users": users,
-            }
-
-        return self.send_json(
-            {"realms": [realm.__dict__ for realm in realms.values()], "games": data}
-        )
+        return self.send_json(rows)
 
     def send_user_details(self, realm: Realm, user: Optional[User]) -> Response:
         if not user:
