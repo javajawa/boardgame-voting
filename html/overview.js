@@ -15,6 +15,7 @@ const td = elemGenerator("td");
 const th = elemGenerator("th");
 const div = elemGenerator("div");
 const a = elemGenerator("a");
+const input = elemGenerator("input");
 
 function formatGame(game) {
 	if (game.last_created) {
@@ -72,9 +73,11 @@ function suppress(e) {
 }
 
 function buildTable(games) {
+    const searchbox = input({ id: "search", type: "text", keyup: search });
+
     const header = thead(
         tr(
-            th("Game"),
+            th("Game", searchbox),
             th({ id: "_t", class: "smol border numeric", click: sortTable }, div("Total Votes")),
             th({ id: "_a", class: "smol border numeric", click: sortTable }, div("My Boards")),
             th({ id: "_l", class: "smol border numeric", click: sortTable }, div("Boards Launched")),
@@ -93,6 +96,8 @@ function buildTable(games) {
                 td({ class: "number border" }, (game.launched||"").toString()),
                 td({ class: "number" }, game.created > 0 ? (100 * (game.launched||0) / game.created).toFixed(0) + "%": ""),
                 td({ class: "border"},
+                	a({click: suppress, game_id: game.game_id, amount: "4"}, "1wk"),
+                	" | ",
                 	a({click: suppress, game_id: game.game_id, amount: "12"}, "2wk"),
                 	" | ",
                 	a({click: suppress, game_id: game.game_id, amount: "26"}, "4wk"),
@@ -108,7 +113,7 @@ function buildTable(games) {
 }
 
 function sortTable(event) {
-    const target = event.target;
+    const target = event.target.closest("th");
     const body = target.closest("table").querySelector("tbody");
     const rows = Array.from(body.children);
     const numeric = target.classList.contains("numeric");
@@ -149,7 +154,27 @@ function sortTable(event) {
     }
 }
 
+function search() {
+    const term = document.getElementById("search").value;
+    const terms = term.split(/\s+/);
+
+    [...document.querySelectorAll("tbody tr")].forEach(row => {
+        const matches = terms.every(term => row.textContent.toLowerCase().includes(term.toLowerCase()));
+
+        row.style.display = matches ? "" : "none";
+    });
+}
+
+function initTokens() {
+	const tokens = document.getElementById("tokens");
+	tokens.value = window.localStorage.getItem("admintoken") || "";
+	tokens.addEventListener("change", () => {
+		window.localStorage.setItem("admintoken", tokens.value);
+	});
+}
+
 const admin = new URLSearchParams(window.location.search).get("admin");
+initTokens();
 fetch(`overview.json/${admin}`)
     .then(r => r.json())
     .then(games => games.map(formatGame))

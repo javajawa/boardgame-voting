@@ -80,6 +80,8 @@ SPDX-License-Identifier: BSD-2-Clause
                 javascript:((e, ev,c,h) => {let s;e("limit_table_access").querySelector("a")[c]();s = e("restrictToGroup");s.value = "6200361"/*your id here*/;ev(h, s);e("limit_table_access_close")[c]();setTimeout(() => {s=e("gameoption_201_input");if (s.value != 0) {s.value=0;ev(h, s);}setTimeout(() => {s=e("gameoption_200_input");if (s.value != 19) {s.value = 19;ev(h, s);}setTimeout(() => {e("open_table_now")[c]();e("join_confirm")[c]();}, 100);}, 100);}, 100);})(e=>document.getElementById(e),(ev, elem) => {const e = document.createEvent("HTMLEvents");e.initEvent(ev, true, true);ev.eventName = ev;elem.dispatchEvent(e);},"click","change");
             </code>
         </details>
+        Auto-Create Tokens:
         <textarea name="tokens" id="tokens" style="display: block; width: 100%"></textarea>
+        <hr/>
     </body>
 </html>
