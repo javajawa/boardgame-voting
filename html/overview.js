@@ -18,20 +18,20 @@ const a = elemGenerator("a");
 const input = elemGenerator("input");
 
 function formatGame(game) {
-	if (game.last_created) {
-		game.last_created = new Date(game.last_created);
-	}
-	if (game.last_launched) {
-		game.last_launched = new Date(game.last_launched);
-	}
+    if (game.last_created) {
+        game.last_created = new Date(game.last_created);
+    }
+    if (game.last_launched) {
+        game.last_launched = new Date(game.last_launched);
+    }
 
-	game.suppressed = false;
-	if (game.until) {
-		game.until = new Date(game.until);
-		game.suppressed = true;
-	}
+    game.suppressed = false;
+    if (game.until) {
+        game.until = new Date(game.until);
+        game.suppressed = true;
+    }
 
-	return game;
+    return game;
 }
 
 function fixLink(bga_id) {
@@ -57,17 +57,17 @@ function autoBoard(e) {
 }
 
 function suppress(e) {
-	const game_id = e.target.getAttribute("game_id");
-	const days = e.target.getAttribute("amount");
+    const game_id = e.target.getAttribute("game_id");
+    const days = e.target.getAttribute("amount");
 
-	console.log(game_id, days);
-	fetch("suppress", {
+    console.log(game_id, days);
+    fetch("suppress", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-        	"admin": admin,
-        	"game_id": parseInt(game_id),
-        	"days": parseInt(days),
+            "admin": admin,
+            "game_id": parseInt(game_id),
+            "days": parseInt(days),
         }),
     }).then((e.target.closest("tr").classList.add("suppressed")));
 }
@@ -82,6 +82,7 @@ function buildTable(games) {
             th({ id: "_a", class: "smol border numeric", click: sortTable }, div("My Boards")),
             th({ id: "_l", class: "smol border numeric", click: sortTable }, div("Boards Launched")),
             th({ id: "_r", class: "smol numeric", click: sortTable }, div("Launch Rate")),
+            th({ id: "_d", class: "smol", click: sortTable }, div("Last Launched")),
             th({ class: "border" }, div("Suppress")),
             th({ id: "_s", class: "smol border numeric", click: sortTable }, div("Suppressed")),
         )
@@ -90,19 +91,24 @@ function buildTable(games) {
     const rows = tbody(
         Object.values(games).map(game => tr(
                 { class: [game.open > 0 ? "has_boards" : "", game.suppressed ? "suppressed" : ""].join(" ")},
-                td(a({ href: fixLink(game.bga_id), target: "_blank", title: game.description, mousedown: autoBoard, game_id: game.bga_id }, game.name)),
+                td(
+                    a({ href: fixLink(game.bga_id), target: "_blank", title: game.description, mousedown: autoBoard, game_id: game.bga_id }, game.name),
+                    " | ",
+                    a({href: game.link, target: "_blank"}, "info")
+                ),
                 td({ class: "number border", title: (game?.users||"").replaceAll(",", "\n") }, (game.votes||0).toString()),
                 td({ class: "number border" }, (game.open||0).toString()),
                 td({ class: "number border" }, (game.launched||"").toString()),
                 td({ class: "number" }, game.created > 0 ? (100 * (game.launched||0) / game.created).toFixed(0) + "%": ""),
+                td(game.last_launched ? game.last_launched.toISOString().substring(0, 10) : "-"),
                 td({ class: "border"},
-                	a({click: suppress, game_id: game.game_id, amount: "4"}, "1wk"),
-                	" | ",
-                	a({click: suppress, game_id: game.game_id, amount: "12"}, "2wk"),
-                	" | ",
-                	a({click: suppress, game_id: game.game_id, amount: "26"}, "4wk"),
-                	" | ",
-                	a({click: suppress, game_id: game.game_id, amount: "9999"}, "hide"),
+                    a({click: suppress, game_id: game.game_id, amount: "4"}, "1wk"),
+                    " | ",
+                    a({click: suppress, game_id: game.game_id, amount: "12"}, "2wk"),
+                    " | ",
+                    a({click: suppress, game_id: game.game_id, amount: "26"}, "4wk"),
+                    " | ",
+                    a({click: suppress, game_id: game.game_id, amount: "9999"}, "hide"),
                 ),
                 td({ class: "number border" }, game.suppressed ? "0" : "1"),
             )
@@ -166,11 +172,11 @@ function search() {
 }
 
 function initTokens() {
-	const tokens = document.getElementById("tokens");
-	tokens.value = window.localStorage.getItem("admintoken") || "";
-	tokens.addEventListener("change", () => {
-		window.localStorage.setItem("admintoken", tokens.value);
-	});
+    const tokens = document.getElementById("tokens");
+    tokens.value = window.localStorage.getItem("admintoken") || "";
+    tokens.addEventListener("change", () => {
+        window.localStorage.setItem("admintoken", tokens.value);
+    });
 }
 
 const admin = new URLSearchParams(window.location.search).get("admin");
@@ -181,12 +187,12 @@ fetch(`overview.json/${admin}`)
     .then(buildTable)
     .then(table => document.body.appendChild(table))
     .then(() => {
-        const totalColumn = document.getElementById("_t");
-        const launchedColumn = document.getElementById("_l");
+        const votesColumn = document.getElementById("_t");
+        const launchedColumn = document.getElementById("_d");
         const activeColumn = document.getElementById("_a");
         const suppressedColumn = document.getElementById("_s");
         sortTable({ target: launchedColumn });
-        sortTable({ target: totalColumn });
+        sortTable({ target: votesColumn });
         sortTable({ target: activeColumn });
         sortTable({ target: activeColumn });
         sortTable({ target: suppressedColumn });
