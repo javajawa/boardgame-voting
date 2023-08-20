@@ -69,3 +69,17 @@ complexity: 2
 strategy: 2
 luck: 4
 interaction: 3
+
+---
+
+platform: Steam
+name: Keep Talking And Nobody Explodes
+link: https://keeptalkinggame.com/
+description: YOU’RE ALONE. IN A ROOM WITH A BOMB. Your friends have the info you need to defuse it. But there’s a catch. They can’t see the bomb. So everyone will need to talk it out–fast!
+image: https://keeptalkinggame.com/wp-content/uploads/2020/02/KeepTalkingLogo_Transparent_Header-opt.png
+min_players: 2
+max_players: 12
+complexity: 2
+strategy: 2
+luck: 4
+interaction: 5
