@@ -80,6 +80,7 @@ function buildTable(games) {
             th("Game", searchbox),
             th({ id: "_t", class: "smol border numeric", click: sortTable }, div("Total Votes")),
             th({ id: "_a", class: "smol border numeric", click: sortTable }, div("My Boards")),
+            th({ id: "_aa", class: "smol numeric", click: sortTable }, div("All Boards")),
             th({ id: "_l", class: "smol border numeric", click: sortTable }, div("Boards Launched")),
             th({ id: "_r", class: "smol numeric", click: sortTable }, div("Launch Rate")),
             th({ id: "_d", class: "smol", click: sortTable }, div("Last Launched")),
@@ -90,14 +91,18 @@ function buildTable(games) {
 
     const rows = tbody(
         Object.values(games).map(game => tr(
-                { class: [game.open > 0 ? "has_boards" : "", game.suppressed ? "suppressed" : ""].join(" ")},
+                {
+                    game_id: game.bga_id,
+                    class: [game.all_open > 0 ? "has_boards" : "", game.suppressed ? "suppressed" : ""].join(" ")
+                },
                 td(
                     a({ href: fixLink(game.bga_id), target: "_blank", title: game.description, mousedown: autoBoard, game_id: game.bga_id }, game.name),
                     " | ",
                     a({href: game.link, target: "_blank"}, "info")
                 ),
                 td({ class: "number border", title: (game?.users||"").replaceAll(",", "\n") }, (game.votes||0).toString()),
-                td({ class: "number border" }, (game.open||0).toString()),
+                td({ class: "number border", field: "open" }, (game.open||0).toString()),
+                td({ class: "number", field: "all_open" }, (game.all_open||0).toString()),
                 td({ class: "number border" }, (game.launched||"").toString()),
                 td({ class: "number" }, game.created > 0 ? (100 * (game.launched||0) / game.created).toFixed(0) + "%": ""),
                 td(game.last_launched ? game.last_launched.toISOString().substring(0, 10) : "-"),
@@ -115,7 +120,24 @@ function buildTable(games) {
         )
     );
 
-    return table(header, rows);
+    return table(header, rows, {"id": "the_table"});
+}
+
+function updateTable(games) {
+    const table = document.getElementById("the_table");
+
+    Object.values(games).map(game => {
+        const row = table.querySelector(`tr[game_id="${game.bga_id}"]`);
+
+        if (!row) {
+            return;
+        }
+        row.classList.toggle("suppressed", game.suppressed);
+        row.classList.toggle("has_boards", game.all_open > 0);
+
+        row.querySelector('td[field="open"]').textContent = (game?.open||0).toString();
+        row.querySelector('td[field="all_open"]').textContent = (game?.all_open||0).toString();
+    });
 }
 
 function sortTable(event) {
@@ -197,3 +219,13 @@ fetch(`overview.json/${admin}`)
         sortTable({ target: activeColumn });
         sortTable({ target: suppressedColumn });
     });
+
+setInterval(
+    () => {
+        fetch(`overview.json/${admin}`)
+            .then(r => r.json())
+            .then(games => games.map(formatGame))
+            .then(updateTable)
+    },
+    30000
+);

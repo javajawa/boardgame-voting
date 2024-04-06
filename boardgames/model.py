@@ -130,7 +130,7 @@ class BoardAdminSuppression(orm.Table["BoardAdminSuppression"]):
 class BoardAdmin(orm.Table["BoardAdmin"]):
     admin: str
     bga_id: int
-    # suppressions: Dict[Game, datetime.datetime] = dataclasses.field(default_factory=dict)
+    # suppressions: Dict[Game, datetime.datetime] = field(default_factory=dict)
     board_admin_id: Optional[int] = None
 
 

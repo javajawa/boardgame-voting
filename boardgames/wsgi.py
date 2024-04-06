@@ -236,7 +236,7 @@ class BGHandler(AuthHandler):
         self.cursor.execute(
             (
                 "SELECT game_id, name, bga_id, link, description, votes, users, "
-                "until, open, created, last_created, launched, last_launched "
+                "until, open, all_open, created, last_created, launched, last_launched "
                 "FROM Game "
                 "NATURAL LEFT JOIN ( "
                 "SELECT game_id, SUM(IIF(state == 'open', 1, 0)) open, "
@@ -245,13 +245,19 @@ class BGHandler(AuthHandler):
                 "FROM Board WHERE board_admin_id = ? GROUP BY game_id "
                 ") "
                 "NATURAL LEFT JOIN ( "
+                "SELECT game_id, COUNT(0) all_open "
+                "FROM Board WHERE state == 'open' GROUP BY game_id "
+                ") "
+                "NATURAL LEFT JOIN ( "
                 "SELECT game_id, COUNT(0) votes, GROUP_CONCAT(DISTINCT username) users "
                 "FROM AsyncVote NATURAL JOIN User NATURAL JOIN BoardAdminRealm "
                 "WHERE board_admin_id = ? "
                 "GROUP BY game_id "
                 ") "
                 "NATURAL LEFT JOIN ( "
-                "SELECT game_id, until FROM BoardAdminSuppression WHERE board_admin_id = ? "
+                "SELECT game_id, until "
+                "FROM BoardAdminSuppression "
+                "WHERE board_admin_id = ? AND until > CURRENT_TIMESTAMP "
                 ") "
                 "WHERE Game.platform = 'BGA' "
                 "GROUP BY Game.game_id; "
@@ -269,6 +275,7 @@ class BGHandler(AuthHandler):
             "users",
             "until",
             "open",
+            "all_open",
             "created",
             "last_created",
             "launched",

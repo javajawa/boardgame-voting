@@ -111,10 +111,10 @@ class BGAImporter:
 
             game.min_players = min(game_info["players"])
             game.max_players = min(game_info["players"])
-            game.complexity = game_info["complexity"]
-            game.luck = game_info["luck"]
-            game.strategy = game_info["strategy"]
-            game.interaction = game_info["diplomacy"]
+            game.complexity = game_info.get("complexity", 0)
+            game.luck = game_info.get("luck", 0)
+            game.strategy = game_info.get("strategy", 0)
+            game.interaction = game_info.get("diplomacy", 0)
             game.description = game.description or str(game_info.get("presentation", ""))
             game.link = "https://boardgamearena.com/gamepanel?game=" + game_json["name"]
             game.image = game_info["assets_url"] + "/game_box180.png"
@@ -128,7 +128,7 @@ class BGAImporter:
 
             self.game_model.store(game)
 
-            for tag_id in game_info["tags"]:
+            for tag_id in game_info.get("tags", []):
                 if tag_id in tag_map:
                     self.tag_mapper.store(game, tag_map[tag_id])
 

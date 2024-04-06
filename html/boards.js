@@ -20,6 +20,7 @@ const span = elemGenerator("span");
 const ul = elemGenerator("ul");
 const li = elemGenerator("li");
 const img = elemGenerator("img");
+const option = elemGenerator("option");
 
 class Description {
     constructor(name, tags, desc, ignore) {
@@ -46,8 +47,14 @@ class Game {
         this.veto = veto;
 
         if (Object.prototype.hasOwnProperty.call(description, this.name)) {
-            this.description = descriptions[name].desc || this.description;
-            this.tags = descriptions[name].tags;
+            this.description = descriptions[name]?.desc || this.description;
+            this.tags = descriptions[name]?.tags || [];
+        }
+
+        if (this.description.startsWith("[")) {
+            this.description = this.description
+                .replaceAll(/["'], ["']/g, "\n\n")
+                .replaceAll(/(^\[['"]|['"]])/g, "");
         }
     }
 }
@@ -378,7 +385,8 @@ function prepareBoardMessage(ble) {
             { "class": "table-list" },
             ble.boards.map(board =>
                 li(
-                    {"class": board.mods.includes("Intro") ? "is-intro" : "not-intro"},
+                    {"class": "shown " + (board.mods.includes("Intro") ? "is-intro" : "not-intro")},
+                    {"admin": board.creator.admin},
                     a({ href: board.link.toString(), target: "_blank" }, "View Table"),
                     a(board.creator.admin, {
                         class: "tag admin",
@@ -412,6 +420,7 @@ function prepareBoardMessage(ble) {
 
 function getBoards(filter, boards, me) {
     const list = new BoardList();
+    const admins = new Set();
 
     filter(boards).forEach(data => {
         const game_options = new Map(Object.entries(data.game.options).map(([k, v]) => [parseInt(k, 10), JSON.parse(v)]));
@@ -453,6 +462,10 @@ function getBoards(filter, boards, me) {
 
             const option = game_options.get(id);
 
+            if (option.values instanceof Array) {
+                option.values = Object.fromEntries(option.values.map(v => [v["id"], v]));
+            }
+
             if (!Object.prototype.hasOwnProperty.call(option.values, value)) {
                 return;
             }
@@ -478,10 +491,26 @@ function getBoards(filter, boards, me) {
             data.seats_taken
         );
 
+        admins.add(data.creator.admin);
+
         list.add(game, board);
     });
 
+    while (admin_list.options.length) {
+        admin_list.options.remove(0);
+    }
+    admin_list.options.add(option("All Admins"));
+    admins.forEach(admin => admin_list.options.add(option(admin)));
+
     return list.sorted();
+}
+
+function adminSelectChange() {
+    const selected = admin_list.value;
+
+    document.querySelectorAll("li").forEach(e =>
+        e.classList.toggle("shown", selected === "All Admins" || e.getAttribute("admin") === selected)
+    )
 }
 
 function createBlock(title, filter, boards, me) {
@@ -518,15 +547,14 @@ Promise.all([fetch("boards.json").then(r => r.json()), fetch("me").then(r => r.j
     document.body.appendChild(content);
 });
 
-window.compactToggle = () => window.localStorage.setItem("compact", document.body.classList.toggle("compact"));
-window.compactIntro = e => {
-   const current = parseInt(e.target.getAttribute("data-state")) || 0;
-   const next = current < 1 ? current + 1 : -1;
+const board_type = document.getElementById("intro");
+board_type.addEventListener("change", () => {
+    const value = parseInt(board_type.value, 10);
+    const cl = document.body.classList;
 
-   const cl = document.body.classList;
+    cl.toggle("hide-intros", value === -1);
+    cl.toggle("hide-regular", value === 1);
+})
 
-    cl.toggle("hide-intros", next === -1);
-    cl.toggle("hide-regular", next === 1);
-    e.target.setAttribute("data-state", next);
-    e.target.textContent = "Toggle Intros (currently showing " + ["Non-Intro", "All", "Only Intro"][next+1] + ")";
-};
+const admin_list = document.getElementById("admin");
+admin_list.addEventListener("change", adminSelectChange);

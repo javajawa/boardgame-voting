@@ -22,7 +22,12 @@ SPDX-License-Identifier: BSD-2-Clause
             </form>
         </nav>
         <h1>Current Board</h1>
-		<button onclick="compactToggle()">Toggle Compact</button>
-		<button onclick="compactIntro(event)" data-state="0">Toggle Intro (All)</button>
+		<button onclick="window.localStorage.setItem('compact', document.body.classList.toggle('compact'))">Toggle Compact</button>
+        <select id="intro">
+            <option value="0">All Board Types</option>
+            <option value="1">Only Intro</option>
+            <option value="-1">Non-Intro</option>
+        </select>
+        <select id="admin"></select>
     </body>
 </html>

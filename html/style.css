@@ -239,3 +239,10 @@ body.hide-intros .only-intros, body.hide-intros .is-intro, body.hide-regular .no
 	display: none;
 }
 
+article:not(:has(.shown)) {
+    display: none;
+}
+
+.description {
+    white-space: pre-wrap;
+}
