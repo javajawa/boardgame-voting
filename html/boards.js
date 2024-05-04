@@ -372,9 +372,11 @@ function prepareBoardMessage(ble) {
     const game = ble.game;
     const has_only_intros = !ble.boards.some(board => !board.mods.includes("Intro"));
     const has_no_intros = !ble.boards.some(board => board.mods.includes("Intro"));
+    const has_only_first_game = !ble.boards.some(board => !board.mods.includes("Admin's First Game"));
+    const has_no_first_game = !ble.boards.some(board => board.mods.includes("Admin's First Game"));
 
     return article(
-        { class: (game.vote ? " voted" : "") + (game.veto ? " vetoed" : "") + (has_no_intros ? " no-intros" : "") + (has_only_intros ? " only-intros" : "") },
+        { class: (game.vote ? " voted" : "") + (game.veto ? " vetoed" : "") + (has_no_intros ? " no-intros" : "") + (has_only_intros ? " only-intros" : "") + (has_no_first_game ? " no-first-games" : "") + (has_only_first_game ? " only-first-games" : "") },
         img({ "class": "boxart", "src": game.image }),
         header(
             h3(game.name),
@@ -385,7 +387,7 @@ function prepareBoardMessage(ble) {
             { "class": "table-list" },
             ble.boards.map(board =>
                 li(
-                    {"class": "shown " + (board.mods.includes("Intro") ? "is-intro" : "not-intro")},
+                    {"class": "shown " + (board.mods.includes("Intro") ? "is-intro" : "not-intro") + (board.mods.includes("Admin's First Game") ? " is-first-game" : " not-first-game")},
                     {"admin": board.creator.admin},
                     a({ href: board.link.toString(), target: "_blank" }, "View Table"),
                     a(board.creator.admin, {
@@ -455,6 +457,10 @@ function getBoards(filter, boards, me) {
         Object.entries(data.options).forEach(([id, value]) => {
             id = parseInt(id, 10);
             value = parseInt(value, 10);
+
+            if (id === -1) {
+                table_modifiers.push("Admin's First Game");
+            }
 
             if (!game_options.has(id)) {
                 return;
@@ -547,13 +553,21 @@ Promise.all([fetch("boards.json").then(r => r.json()), fetch("me").then(r => r.j
     document.body.appendChild(content);
 });
 
+const cl = document.body.classList;
 const board_type = document.getElementById("intro");
 board_type.addEventListener("change", () => {
     const value = parseInt(board_type.value, 10);
-    const cl = document.body.classList;
 
     cl.toggle("hide-intros", value === -1);
     cl.toggle("hide-regular", value === 1);
+})
+
+const admin_skill = document.getElementById("first-games");
+admin_skill.addEventListener("change", () => {
+    const value = parseInt(admin_skill.value, 10);
+
+    cl.toggle("hide-first-game", value === -1);
+    cl.toggle("hide-known-game", value === 1);
 })
 
 const admin_list = document.getElementById("admin");

@@ -238,6 +238,9 @@ body.compact .tablelist {
 body.hide-intros .only-intros, body.hide-intros .is-intro, body.hide-regular .no-intros, body.hide-regular .not-intro {
 	display: none;
 }
+body.hide-first-game .only-first-games, body.hide-first-game .is-first-game, body.hide-known-game .no-first-games, body.hide-known-game .not-first-game {
+	display: none;
+}
 
 article:not(:has(.shown)) {
     display: none;

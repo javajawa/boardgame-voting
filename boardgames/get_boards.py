@@ -157,6 +157,8 @@ class BoardImporter(contextlib.ContextDecorator):
             board.max_seats = int(table["max_player"])
             board.description = table["presentation"]
             board.options = {int(k): int(v) for k, v in table["options"].items()}
+            if table["players"][str(admin.bga_id)]["played"] == "0":
+                board.options[-1] = 1
 
         LOGGER.debug("Adding board %s (%s)", table["id"], self.games[game_id].name)
 
