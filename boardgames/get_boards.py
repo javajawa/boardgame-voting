@@ -66,7 +66,13 @@ class BoardImporter(contextlib.ContextDecorator):
 
     def do_import(self) -> None:
         with requests.Session() as session:
-            for line in session.get("https://boardgamearena.com/").text.split("\n"):
+            try:
+                resp = session.get("https://boardgamearena.com/")
+            except requests.exceptions.RequestException as exc:
+                LOGGER.error("%s 'logging in' to BGA", type(exc).__name__)
+                return
+
+            for line in resp.text.split("\n"):
                 if "requestToken: " not in line:
                     continue
 
@@ -101,15 +107,28 @@ class BoardImporter(contextlib.ContextDecorator):
     def import_by_user(self, session: requests.Session, admin: BoardAdmin) -> None:
         LOGGER.info("Loading boards from %s", admin.admin)
 
-        request = session.get(
-            "https://en.boardgamearena.com/tablemanager/tablemanager/tableinfos.html",
-            params={
-                "playerfilter": str(admin.bga_id),
-                # "status": "open",
-                "dojo.preventCache": str(int(time.time())),
-            },
-        )
-        data = request.json()
+        try:
+            request = session.get(
+                "https://en.boardgamearena.com/tablemanager/tablemanager/tableinfos.html",
+                params={
+                    "playerfilter": str(admin.bga_id),
+                    # "status": "open",
+                    "dojo.preventCache": str(int(time.time())),
+                },
+            )
+        except requests.RequestException as exc:
+            LOGGER.error("%s getting date for %s from BGA", type(exc).__name__, admin.admin)
+            return
+
+        if request.status_code != 200:
+            LOGGER.error("Status %d getting date for %s from BGA", request.status_code, admin.admin)
+            return
+
+        try:
+            data = request.json()
+        except requests.exceptions.JSONDecodeError:
+            LOGGER.error("Json error getting date for %s from BGA", request.status_code, admin.admin)
+            return
 
         tables = data["data"]["tables"]
 
@@ -142,9 +161,9 @@ class BoardImporter(contextlib.ContextDecorator):
             board = self.create_board(admin, table)
 
         board.state = table["status"].replace("async", "")
-        board.created = datetime.datetime.utcfromtimestamp(int(table["scheduled"]))
+        board.created = datetime.datetime.fromtimestamp(int(table["scheduled"]), datetime.UTC)
         board.launch_time = (
-            datetime.datetime.utcfromtimestamp(int(table["gamestart"]))
+            datetime.datetime.fromtimestamp(int(table["gamestart"]), datetime.UTC)
             if table["gamestart"]
             else None
         )

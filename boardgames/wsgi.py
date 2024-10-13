@@ -36,6 +36,7 @@ FILES: Dict[str, Tuple[str, str]] = {
     "/boards.js": ("html/boards.js", "application/javascript"),
     "/script.js": ("html/script.js", "application/javascript"),
     "/vote.js": ("html/vote.js", "application/javascript"),
+    "/elems.js": ("html/elems.js", "application/javascript"),
     "/results.js": ("html/results.js", "application/javascript"),
     "/overview.js": ("html/overview.js", "application/javascript"),
     "/style.css": ("html/style.css", "text/css"),

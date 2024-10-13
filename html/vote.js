@@ -5,7 +5,7 @@
 // vim: expandtab ts=4
 "use strict";
 
-import { elemGenerator } from "https://javajawa.github.io/elems.js/elems.js";
+import { elemGenerator } from "/elems.js";
 
 const table = elemGenerator("table");
 const tbody = elemGenerator("tbody");
