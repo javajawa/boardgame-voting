@@ -127,10 +127,10 @@ class BoardImporter(contextlib.ContextDecorator):
         try:
             data = request.json()
         except requests.exceptions.JSONDecodeError:
-            LOGGER.error("Json error getting date for %s from BGA", request.status_code, admin.admin)
+            LOGGER.error("Json error getting data for %s from BGA", request.status_code, admin.admin)
             return
 
-        tables = data["data"]["tables"]
+        tables = data.get("data", {}).get("tables")
 
         if not tables:
             LOGGER.info("No tables found for %s", admin.admin)
