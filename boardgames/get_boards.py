@@ -121,13 +121,17 @@ class BoardImporter(contextlib.ContextDecorator):
             return
 
         if request.status_code != 200:
-            LOGGER.error("Status %d getting date for %s from BGA", request.status_code, admin.admin)
+            LOGGER.error(
+                "Status %d getting date for %s from BGA", request.status_code, admin.admin
+            )
             return
 
         try:
             data = request.json()
         except requests.exceptions.JSONDecodeError:
-            LOGGER.error("Json error %d getting date for %s from BGA", request.status_code, admin.admin)
+            LOGGER.error(
+                "Json error %d getting date for %s from BGA", request.status_code, admin.admin
+            )
             return
 
         tables = data.get("data", {}).get("tables")

@@ -92,7 +92,7 @@ def _make_model(cls: Type[ModelledTable]) -> TableModel[ModelledTable]:
     table = cls.__name__
     id_field = re.sub(r"(?<!^)(?=[A-Z])", "_", table).lower() + "_id"
 
-    model: TableModel[ModelledTable] = TableModel(cls, table, id_field)  # type: ignore
+    model: TableModel[ModelledTable] = TableModel(cls, table, id_field)
     types = get_type_hints(cls)
 
     if id_field not in types:
@@ -104,7 +104,7 @@ def _make_model(cls: Type[ModelledTable]) -> TableModel[ModelledTable]:
         if _field in [id_field]:
             continue
 
-        _process_type(model, cls, _field, _type)  # type: ignore
+        _process_type(model, cls, _field, _type)
 
     return model
 

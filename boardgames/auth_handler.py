@@ -17,7 +17,7 @@ import sqlite3
 from http.cookies import SimpleCookie, Morsel
 
 import bcrypt
-import multipart
+import multipart  # type: ignore[import-untyped]
 
 from boardgames.handler import Handler, Response, WSGIEnv
 from boardgames.model import Realm, User
@@ -33,7 +33,7 @@ class AuthHandler(Handler):
     def auth(self, realm: Realm, cookie: str) -> Optional[User]:
         """Checks if a user is authorised"""
 
-        cookies: SimpleCookie[str] = SimpleCookie(cookie)
+        cookies: SimpleCookie = SimpleCookie(cookie)
 
         user_cookie: Optional[Morsel[str]] = cookies.get(f"user-{realm.realm}")
         auth_cookie: Optional[Morsel[str]] = cookies.get(f"auth-{realm.realm}")

@@ -415,7 +415,11 @@ class BGHandler(AuthHandler):
                 "is_meeting": "false",
             },
             cookies=config,
-            headers={"x-request-token": config["TournoiEnLigneid"]} if "TournoiEnLigneid" in config else {},
+            headers=(
+                {"x-request-token": config["TournoiEnLigneid"]}
+                if "TournoiEnLigneid" in config
+                else {}
+            ),
             timeout=30,
         )
 
