@@ -4,6 +4,7 @@
 
 bcrypt
 gunicorn
+multipart
 requests
 PYYaml
 typing_inspect

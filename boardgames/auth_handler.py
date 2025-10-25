@@ -12,12 +12,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Union
 
 import abc
-import cgi
 import sqlite3
 
 from http.cookies import SimpleCookie, Morsel
 
 import bcrypt
+import multipart
 
 from boardgames.handler import Handler, Response, WSGIEnv
 from boardgames.model import Realm, User
@@ -58,11 +58,12 @@ class AuthHandler(Handler):
         pass
 
     def login(self, realm: Realm, environ: WSGIEnv) -> Response:
-        data = cgi.FieldStorage(environ=environ, fp=environ["wsgi.input"])  # type: ignore
+        data: multipart.MultiDict[str, str]
+        data, _ = multipart.parse_form_data(environ)
 
-        username = data["username"].file.read() if "username" in data else ""
-        password = data["password"].file.read() if "password" in data else ""
-        redirect = data["redirect"].file.read() if "redirect" in data else f"/{realm.realm}/"
+        username = data.get("username", "")
+        password = data.get("password", "")
+        redirect = data.get("redirect", f"/{realm.realm}/")
 
         if not username or not password:
             return self.auth_challenge(realm)
